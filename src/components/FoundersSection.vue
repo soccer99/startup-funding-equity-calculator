@@ -88,16 +88,19 @@ function onDragEnd() {
         <input
           v-model="founder.name"
           type="text"
+          inputmode="text"
+          autocomplete="off"
           placeholder="Founder name"
-          class="flex-1 bg-slate-800/50 border border-slate-700/50 rounded px-2 py-1.5 text-white placeholder-slate-600 focus:outline-none focus:border-slate-600 hover:border-slate-600"
+          class="flex-1 min-w-0 bg-slate-800/50 border border-slate-700/50 rounded px-2 py-1.5 text-white placeholder-slate-600 focus:outline-none focus:border-slate-600 hover:border-slate-600"
         />
         <input
           v-model.number="founder.percentage"
           type="number"
+          inputmode="decimal"
           min="0"
           max="100"
           step="0.1"
-          class="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-white text-right text-sm focus:outline-none focus:border-slate-600"
+          class="w-16 sm:w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-white text-right text-sm focus:outline-none focus:border-slate-600"
         />
         <span class="text-slate-500 text-sm">%</span>
         <button
@@ -125,10 +128,11 @@ function onDragEnd() {
           :value="initialOptionPool"
           @input="emit('update:initialOptionPool', Number(($event.target as HTMLInputElement).value))"
           type="number"
+          inputmode="decimal"
           min="0"
           max="30"
           step="1"
-          class="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-white text-right text-sm focus:outline-none focus:border-slate-600"
+          class="w-16 sm:w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-white text-right text-sm focus:outline-none focus:border-slate-600"
         />
         <span class="text-slate-500 text-sm">%</span>
         <div class="w-4 ml-2"></div>

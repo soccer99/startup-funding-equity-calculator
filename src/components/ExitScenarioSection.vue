@@ -76,7 +76,7 @@ function getReturnMultiple(payout: ExitPayout): string | null {
 
     <div class="border border-slate-800 rounded">
       <!-- Exit Type and Valuation -->
-      <div class="p-4 grid grid-cols-2 gap-6">
+      <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         <div>
           <label class="block text-xs text-slate-500 uppercase tracking-wide mb-2">Type</label>
           <div class="flex border border-slate-700 rounded overflow-hidden">

@@ -64,12 +64,12 @@ function getTypeColor(type: string): string {
 
 <template>
   <section class="mb-10">
-    <div class="flex items-baseline justify-between mb-4">
+    <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3 mb-4">
       <h2 class="text-lg font-medium text-white">
         Cap Table<InfoTooltip termKey="capTable" />
       </h2>
-      <div class="flex items-center gap-4">
-        <div class="flex gap-4 text-xs text-slate-500">
+      <div class="flex items-center gap-4 flex-wrap">
+        <div class="hidden sm:flex gap-4 text-xs text-slate-500">
           <span class="flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
             Founders

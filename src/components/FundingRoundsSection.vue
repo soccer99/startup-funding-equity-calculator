@@ -1,15 +1,27 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import type { FundingRound } from '@/types'
+import { ref, computed } from 'vue'
+import type { FundingRound, Investor } from '@/types'
 import { formatCurrency, formatPercentage } from '@/utils/format'
-import type { Investor } from '@/types'
 import { roundPresets } from '@/data/roundPresets'
 import InfoTooltip from './InfoTooltip.vue'
 import CurrencyInput from './CurrencyInput.vue'
+import InvestorCombobox from './InvestorCombobox.vue'
 
-defineProps<{
+const props = defineProps<{
   fundingRounds: FundingRound[]
 }>()
+
+const previousInvestorNames = computed(() => {
+  const names = new Set<string>()
+  for (const round of props.fundingRounds) {
+    for (const investor of round.investors) {
+      if (investor.name && investor.name.trim()) {
+        names.add(investor.name.trim())
+      }
+    }
+  }
+  return Array.from(names).sort()
+})
 
 const emit = defineEmits<{
   addRound: [presetId?: string]
@@ -69,7 +81,7 @@ function getInvestorPercentage(round: FundingRound, investor: Investor): number 
             <input
               v-model="round.name"
               type="text"
-              class="bg-transparent text-white font-medium focus:outline-none w-28"
+              class="bg-slate-800/50 border border-slate-700/50 rounded px-2 py-1 text-white font-medium focus:outline-none focus:border-slate-600 hover:border-slate-600 w-28"
             />
             <select
               @change="onPresetChange(round, $event)"
@@ -94,7 +106,7 @@ function getInvestorPercentage(round: FundingRound, investor: Investor): number 
 
         <!-- Round Details -->
         <div class="p-4">
-          <div class="grid grid-cols-2 gap-6 mb-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
             <div>
               <label class="block text-xs text-slate-500 uppercase tracking-wide mb-2">
                 Pre-Money Valuation<InfoTooltip termKey="preMoneyValuation" />
@@ -117,6 +129,7 @@ function getInvestorPercentage(round: FundingRound, investor: Investor): number 
                 <input
                   v-model.number="round.optionPoolPercent"
                   type="number"
+                  inputmode="decimal"
                   min="0"
                   max="30"
                   step="1"
@@ -141,12 +154,11 @@ function getInvestorPercentage(round: FundingRound, investor: Investor): number 
               >
                 <div class="p-3">
                   <div class="flex items-center gap-3">
-                    <div class="w-1.5 h-1.5 bg-sky-500 rounded-full"></div>
-                    <input
+                    <div class="w-1.5 h-1.5 bg-sky-500 rounded-full flex-shrink-0"></div>
+                    <InvestorCombobox
                       v-model="investor.name"
-                      type="text"
+                      :suggestions="previousInvestorNames"
                       placeholder="Investor name"
-                      class="flex-1 bg-transparent text-white placeholder-slate-600 focus:outline-none"
                     />
                     <div class="flex items-center gap-2">
                       <span class="text-slate-500">$</span>
@@ -288,5 +300,6 @@ function getInvestorPercentage(round: FundingRound, investor: Investor): number 
         </button>
       </div>
     </div>
+
   </section>
 </template>

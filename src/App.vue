@@ -31,10 +31,10 @@ const {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100">
-    <div class="max-w-5xl mx-auto px-6 py-12">
-      <header class="mb-12">
-        <h1 class="text-3xl font-semibold tracking-tight text-white mb-3">
+  <div class="dark min-h-screen bg-slate-950 text-slate-100">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <header class="mb-8 sm:mb-12">
+        <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-white mb-2 sm:mb-3">
           Equity Dilution Calculator
         </h1>
         <p class="text-slate-400 max-w-2xl">
