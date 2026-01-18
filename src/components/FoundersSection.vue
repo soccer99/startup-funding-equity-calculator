@@ -89,7 +89,7 @@ function onDragEnd() {
           v-model="founder.name"
           type="text"
           placeholder="Founder name"
-          class="flex-1 bg-transparent text-white placeholder-slate-600 focus:outline-none"
+          class="flex-1 bg-slate-800/50 border border-slate-700/50 rounded px-2 py-1.5 text-white placeholder-slate-600 focus:outline-none focus:border-slate-600 hover:border-slate-600"
         />
         <input
           v-model.number="founder.percentage"
