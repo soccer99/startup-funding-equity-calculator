@@ -58,6 +58,14 @@ function getTypeLabel(type: string): string {
     default: return ''
   }
 }
+
+function getReturnMultiple(payout: ExitPayout): string | null {
+  if (payout.type !== 'investor' || !payout.investedAmount || payout.investedAmount === 0) {
+    return null
+  }
+  const multiple = payout.payout / payout.investedAmount
+  return `${multiple.toFixed(2)}x`
+}
 </script>
 
 <template>
@@ -324,6 +332,9 @@ function getTypeLabel(type: string): string {
             </div>
             <div class="text-right">
               <div class="font-mono text-lg text-white">{{ formatCurrency(payout.payout) }}</div>
+              <div v-if="payout.type === 'investor' && getReturnMultiple(payout)" class="text-xs text-emerald-400">
+                {{ getReturnMultiple(payout) }} return
+              </div>
               <div v-if="payout.type === 'investor' && payout.preferenceAmount" class="text-xs text-slate-600">
                 <template v-if="payout.preferenceAmount > 0 && payout.participationAmount">
                   {{ formatCurrency(payout.preferenceAmount) }} pref + {{ formatCurrency(payout.participationAmount) }} participation

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { FundingRound } from '@/types'
-import { formatCurrency } from '@/utils/format'
+import { formatCurrency, formatPercentage } from '@/utils/format'
+import type { Investor } from '@/types'
 import { roundPresets } from '@/data/roundPresets'
 import InfoTooltip from './InfoTooltip.vue'
 import CurrencyInput from './CurrencyInput.vue'
@@ -33,6 +34,13 @@ function onPresetChange(round: FundingRound, event: Event) {
   if (presetId) {
     emit('applyPreset', round.id, presetId)
   }
+}
+
+function getInvestorPercentage(round: FundingRound, investor: Investor): number {
+  const totalInvestment = round.investors.reduce((sum, i) => sum + i.amount, 0)
+  const postMoney = round.preMoneyValuation + totalInvestment
+  if (postMoney === 0) return 0
+  return (investor.amount / postMoney) * 100
 }
 </script>
 
@@ -140,14 +148,15 @@ function onPresetChange(round: FundingRound, event: Event) {
                       placeholder="Investor name"
                       class="flex-1 bg-transparent text-white placeholder-slate-600 focus:outline-none"
                     />
-                    <div class="flex items-center">
-                      <span class="text-slate-500 mr-2">$</span>
+                    <div class="flex items-center gap-2">
+                      <span class="text-slate-500">$</span>
                       <CurrencyInput
                         v-model="investor.amount"
                         :min="0"
                         :step="10000"
                         class="w-28 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-right text-sm focus:outline-none focus:border-slate-600"
                       />
+                      <span class="text-xs text-sky-400 w-14 text-right">{{ formatPercentage(getInvestorPercentage(round, investor)) }}</span>
                     </div>
                     <button
                       @click="emit('removeInvestor', round, investor.id)"
