@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/* Global clickable element styles */
+button, a {
+  cursor: pointer;
+}
+
+/* Floating Vue Tooltip Customization */
+.v-popper--theme-dropdown .v-popper__inner {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.v-popper--theme-dropdown .v-popper__arrow-container {
+  display: none;
+}
+
+/* Ensure tooltips appear above other content */
+.v-popper__popper {
+  z-index: 9999;
+}
+
+/* Smooth transitions */
+.v-popper__popper--shown {
+  transition: opacity 0.15s ease-out;
+}
+
+.v-popper__popper--hidden {
+  opacity: 0;
+  transition: opacity 0.1s ease-in;
+}
