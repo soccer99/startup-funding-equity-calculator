@@ -64,6 +64,9 @@ function getReturnMultiple(payout: ExitPayout): string | null {
     return null
   }
   const multiple = payout.payout / payout.investedAmount
+  if (typeof multiple !== 'number' || isNaN(multiple)) {
+    return null
+  }
   return `${multiple.toFixed(2)}x`
 }
 </script>
