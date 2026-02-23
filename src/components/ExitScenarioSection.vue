@@ -77,6 +77,10 @@ function getReturnMultiple(payout: ExitPayout): string | null {
       Exit Scenario<InfoTooltip termKey="exit" />
     </h2>
 
+    <div class="mb-4 px-3 py-2 bg-amber-950/30 border border-amber-900/50 rounded text-xs text-amber-200/80">
+      <strong>Estimate only.</strong> Exit payouts depend on complex legal terms not modeled here. Real waterfalls include debt, taxes, escrow holdbacks, and negotiated terms. Not legal or investment advice. Consult professionals before making decisions.
+    </div>
+
     <div class="border border-slate-800 rounded">
       <!-- Exit Type and Valuation -->
       <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">

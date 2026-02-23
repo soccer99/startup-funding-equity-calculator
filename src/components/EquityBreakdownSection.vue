@@ -102,6 +102,10 @@ function getTypeColor(type: string): string {
       </div>
     </div>
 
+    <div class="mb-4 px-3 py-2 bg-amber-950/30 border border-amber-900/50 rounded text-xs text-amber-200/80">
+      <strong>Estimate only.</strong> This calculator provides simplified projections for educational purposes. Results may contain errors. Not legal or investment advice. Actual cap tables involve additional terms. Consult professionals for real transactions.
+    </div>
+
     <div class="border border-slate-800 rounded overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
