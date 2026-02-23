@@ -127,6 +127,48 @@ const isExpanded = ref(false)
           </div>
         </div>
 
+        <!-- Option Pools -->
+        <div class="mt-8">
+          <h3 class="text-sm font-medium text-slate-300 uppercase tracking-wide mb-4">
+            Option Pools<InfoTooltip termKey="optionPool" />
+          </h3>
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="space-y-4 text-sm text-slate-400">
+              <p>
+                <span class="text-white">What it is:</span> A reserve of shares set aside for future employee equity grants—stock options, RSUs, or other incentive compensation.
+              </p>
+              <p>
+                <span class="text-white">Why it exists:</span> Startups use equity to attract talent when they can't compete on salary. The pool lets you make grants without shareholder approval each time.
+              </p>
+              <p>
+                <span class="text-white">How dilution works:</span> When the pool is created, it dilutes existing shareholders. When options are granted from the pool, no additional dilution occurs—the shares were already reserved.
+              </p>
+            </div>
+            <div class="space-y-4 text-sm text-slate-400">
+              <p>
+                <span class="text-white">When to create:</span> Typically at incorporation (small pool) and expanded before each funding round. VCs often require a "top-up" to 10-20% as a condition of investment.
+              </p>
+              <p>
+                <span class="text-white">Pre vs Post-Money:</span><InfoTooltip termKey="optionPoolShuffle" /> Pre-money pools dilute only founders. Post-money pools dilute everyone equally. VCs prefer pre-money (the "option pool shuffle").
+              </p>
+              <p>
+                <span class="text-white">Typical sizes:</span> 10% at Seed, 15-20% at Series A, refreshed to maintain ~10-15% unallocated for future hires.
+              </p>
+            </div>
+          </div>
+          <div class="mt-4 p-3 bg-slate-800/50 rounded">
+            <h4 class="text-xs font-medium text-slate-300 uppercase tracking-wide mb-2">Rules of Thumb</h4>
+            <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-slate-400">
+              <li>• Size pool for 12-24 months of hiring</li>
+              <li>• First 10 employees: 0.5-2% each</li>
+              <li>• Employees 11-50: 0.1-0.5% each</li>
+              <li>• Negotiate pool size, not just valuation</li>
+              <li>• Unused pool reverts to founders on exit</li>
+              <li>• Vesting: 4 years with 1-year cliff is standard</li>
+            </ul>
+          </div>
+        </div>
+
         <!-- Exit Waterfall -->
         <div class="mt-8">
           <h3 class="text-sm font-medium text-slate-300 uppercase tracking-wide mb-4">
