@@ -164,6 +164,25 @@ export function useEquityCalculator() {
     round.investors = round.investors.filter(i => i.id !== investorId)
   }
 
+  function reset() {
+    localStorage.removeItem(STORAGE_KEY)
+    founders.value = [
+      { id: 1, name: 'Founder 1', percentage: 50 },
+      { id: 2, name: 'Founder 2', percentage: 50 },
+    ]
+    initialOptionPool.value = 0
+    fundingRounds.value = []
+    exitType.value = 'acquisition'
+    exitValuation.value = 100000000
+    exitOptions.value = {
+      acquisition: { ...DEFAULT_ACQUISITION_OPTIONS },
+      ipo: { ...DEFAULT_IPO_OPTIONS },
+    }
+    nextFounderId = 3
+    nextRoundId = 1
+    nextInvestorId = 1
+  }
+
   const totalFounderPercentage = computed(() => {
     return founders.value.reduce((sum, f) => sum + f.percentage, 0)
   })
@@ -523,5 +542,6 @@ export function useEquityCalculator() {
     removeFundingRound,
     addInvestor,
     removeInvestor,
+    reset,
   }
 }

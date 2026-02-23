@@ -27,6 +27,7 @@ const {
   removeFundingRound,
   addInvestor,
   removeInvestor,
+  reset,
 } = useEquityCalculator()
 </script>
 
@@ -34,13 +35,23 @@ const {
   <div class="dark min-h-screen bg-slate-950 text-slate-100">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <header class="mb-8 sm:mb-12">
-        <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-white mb-2 sm:mb-3">
-          Equity Dilution Calculator
-        </h1>
-        <p class="text-slate-400 max-w-2xl">
-          Model funding rounds, ownership dilution, and exit scenarios.
-          <span class="text-slate-500">Hover over info icons for term definitions.</span>
-        </p>
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-white mb-2 sm:mb-3">
+              Equity Dilution Calculator
+            </h1>
+            <p class="text-slate-400 max-w-2xl">
+              Model funding rounds, ownership dilution, and exit scenarios.
+              <span class="text-slate-500">Hover over info icons for term definitions.</span>
+            </p>
+          </div>
+          <button
+            @click="reset"
+            class="flex-shrink-0 px-3 py-1.5 text-sm text-slate-500 hover:text-white border border-slate-700 hover:border-slate-600 rounded transition-colors"
+          >
+            Reset
+          </button>
+        </div>
       </header>
 
       <EducationalIntro />
