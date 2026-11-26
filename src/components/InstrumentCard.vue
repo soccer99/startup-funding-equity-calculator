@@ -42,32 +42,35 @@ const result = computed(() => {
 
 <template>
   <div class="card overflow-hidden">
-    <div class="card-x py-3 border-b border-slate-800 flex flex-wrap items-center gap-x-3 gap-y-2">
+    <!-- Phone: type and remove on line one, then the name, then the amount. Wide screen: one line. -->
+    <div class="card-x py-3 border-b border-slate-800 grid grid-cols-[auto_minmax(0,1fr)_auto] sm:flex items-center gap-x-3 gap-y-2">
       <div class="w-2 h-2 rounded-full flex-shrink-0" :class="isLoan ? 'bg-slate-400' : 'bg-sky-500'"></div>
-      <span class="font-serif text-lg text-white whitespace-nowrap">{{ title[instrument.kind] }}</span>
-      <InfoTooltip :termKey="termKey[instrument.kind]" class="-ml-2" />
+      <span class="flex items-center font-serif text-lg text-white whitespace-nowrap">
+        {{ title[instrument.kind] }}<InfoTooltip :termKey="termKey[instrument.kind]" />
+      </span>
       <input
         v-model="instrument.name"
         type="text"
+        autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done" @keydown.enter="($event.target as HTMLInputElement).blur()"
         list="investor-names"
         autocomplete="off"
         :placeholder="isLoan ? 'Lender name' : 'Investor name'"
         :aria-label="isLoan ? 'Lender name' : 'Investor name'"
-        class="field flex-1 min-w-0 basis-32 h-8 px-2 text-base sm:text-sm"
+        class="field col-start-2 col-span-2 row-start-2 sm:flex-1 min-w-0 h-9 sm:h-8 px-2 text-base sm:text-sm"
       />
-      <div class="flex items-center gap-2 ml-auto">
+      <div class="col-start-2 col-span-2 row-start-3 flex items-center gap-2">
         <span class="text-slate-400">$</span>
         <CurrencyInput
           v-model="instrument.amount"
           :aria-label="`${title[instrument.kind]} amount, dollars`"
-          class="field w-28 h-8 px-2 text-right text-base sm:text-sm num"
+          class="field flex-1 sm:flex-none min-w-0 sm:w-28 h-9 sm:h-8 px-2 sm:text-right text-base sm:text-sm num"
         />
-        <button type="button" class="icon-btn -mr-2" :aria-label="`Remove ${instrument.name || title[instrument.kind]}`" @click="emit('remove')">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-          </svg>
-        </button>
       </div>
+      <button type="button" class="icon-btn col-start-3 row-start-1 -mr-2" :aria-label="`Remove ${instrument.name || title[instrument.kind]}`" @click="emit('remove')">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+      </button>
     </div>
 
     <div class="card-pad grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">

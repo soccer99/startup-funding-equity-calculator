@@ -55,11 +55,13 @@ function onBlur(event: Event) {
   <input
     type="text"
     inputmode="decimal"
+    enterkeyhint="done"
     autocomplete="off"
     :value="displayValue"
     :placeholder="placeholder ?? '0'"
     @input="onInput"
     @blur="onBlur"
+    @focus="($event.target as HTMLInputElement).select()"
     @keydown.enter="($event.target as HTMLInputElement).blur()"
   />
 </template>

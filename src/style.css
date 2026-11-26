@@ -119,14 +119,90 @@ button, a {
   }
 }
 
-/* No spinner arrows on percent fields: they cover the value. Arrow keys still step. */
-input[type='number'] {
-  appearance: textfield;
+/* ---------- Phones and touch ----------
+   Sources: web.dev "Form attributes in depth", MDN inputmode, WCAG 2.2 target size, Apple HIG (44pt). */
+
+html {
+  -webkit-text-size-adjust: 100%; /* iOS must not make text larger in landscape */
+  -webkit-tap-highlight-color: transparent; /* the controls have their own pressed look */
 }
-input[type='number']::-webkit-inner-spin-button,
-input[type='number']::-webkit-outer-spin-button {
-  appearance: none;
-  margin: 0;
+
+/* Quick taps stay taps: no wait for a double-tap zoom. Pinch zoom still works. */
+button,
+a,
+select,
+input {
+  touch-action: manipulation;
+}
+
+/* The grip handle of a founder row. It takes the whole touch, so a drag there does not scroll the page. */
+.drag-handle {
+  @apply flex h-8 w-6 flex-shrink-0 cursor-grab items-center justify-center rounded-md text-slate-400 hover:text-white active:cursor-grabbing;
+  touch-action: none;
+}
+
+/* Pressed look, for touch screens where there is no hover. */
+.btn:active,
+.btn-quiet:active,
+.chip:active,
+.icon-btn:active {
+  background-color: var(--color-slate-700);
+}
+
+/* Small screens: a tighter type scale and less space between sections. */
+@media (max-width: 639px) {
+  .section {
+    margin-bottom: 2.5rem;
+  }
+  .section-title {
+    font-size: 1.375rem;
+  }
+  .card-pad {
+    padding-block: 1rem;
+  }
+}
+
+/* Safari on iOS zooms the page when a focused field has text smaller than 16px. */
+@media (max-width: 639px), (pointer: coarse) {
+  input.field,
+  select.field {
+    font-size: max(16px, 1rem);
+  }
+}
+
+/* A finger needs a larger target than a mouse: 44px high where there is room. */
+@media (pointer: coarse) {
+  .btn,
+  .btn-quiet,
+  input.field,
+  select.field,
+  [role='group'] > button {
+    min-height: 44px;
+  }
+  .chip {
+    min-height: 40px;
+    min-width: 44px;
+    padding-inline: 0.875rem;
+    font-size: 0.875rem;
+  }
+  .icon-btn,
+  .drag-handle {
+    height: 44px;
+  }
+  .icon-btn {
+    width: 44px;
+  }
+  button[aria-label^='What is'] {
+    width: 2rem;
+    height: 2rem;
+  }
+  input[type='range'] {
+    min-height: 44px;
+  }
+  /* A phone keypad has no letters, so the "10m" shorthand hint does not apply. */
+  .fine-pointer-only {
+    display: none;
+  }
 }
 
 /* Info tooltip (floating-vue): remove the library chrome, the content has its own card. */
@@ -179,7 +255,7 @@ input[type='number']::-webkit-outer-spin-button {
   .btn-quiet,
   .icon-btn,
   .chip:not([aria-pressed='true']),
-  [title='Drag to reorder'],
+  .drag-handle,
   button[aria-label^='What is'] {
     display: none !important;
   }

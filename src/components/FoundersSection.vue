@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import type { Founder } from '@/types'
 import { formatPercentage } from '@/utils/format'
 import InfoTooltip from './InfoTooltip.vue'
@@ -20,38 +20,49 @@ const emit = defineEmits<{
   'update:initialOptionPool': [value: number]
 }>()
 
-// A row can be dragged only while its grip handle is held.
-// This keeps click-and-drag inside the inputs free for text selection.
-const grabbedId = ref<number | null>(null)
-// While a row is dragged, the list shows the new order at once (a live preview).
-// The dragged row stays dim until the drop.
+// Reorder with the grip handle. Pointer events work the same for mouse, pen and touch
+// (HTML drag and drop does not start on most phones). Only the handle starts a drag,
+// so click-and-drag inside the inputs still selects text.
+// While a row is dragged, the list shows the new order at once, and that row stays dim.
 const draggedId = ref<number | null>(null)
+const list = ref<HTMLElement | null>(null)
 let startIndex = -1
 
 const indexOf = (id: number | null) => props.founders.findIndex(f => f.id === id)
 
-function onDragStart(event: DragEvent, id: number) {
+function moveTo(index: number) {
+  const from = indexOf(draggedId.value)
+  if (from !== -1 && index >= 0 && index < props.founders.length && from !== index) emit('reorder', from, index)
+}
+
+function onPointerDown(event: PointerEvent, id: number) {
+  if (event.button !== 0) return
+  event.preventDefault() // no text selection while dragging
+  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId) // keep the moves when the finger leaves the handle
   draggedId.value = id
   startIndex = indexOf(id)
-  if (event.dataTransfer) {
-    event.dataTransfer.effectAllowed = 'move'
-    event.dataTransfer.setData('text/plain', '') // Firefox needs data to start a drag
-  }
 }
 
-function onDragOver(index: number) {
-  const from = indexOf(draggedId.value)
-  if (from !== -1 && from !== index) emit('reorder', from, index)
+function onPointerMove(event: PointerEvent) {
+  if (draggedId.value === null || !list.value) return
+  // Look at the middle of the list, so a finger that moves sideways still finds a row.
+  const box = list.value.getBoundingClientRect()
+  const row = document.elementFromPoint(box.left + box.width / 2, event.clientY)?.closest<HTMLElement>('[data-founder-index]')
+  if (row) moveTo(Number(row.dataset.founderIndex))
 }
 
-function onDragEnd(event: DragEvent) {
-  // Released outside the list or cancelled with Escape: put the row back.
-  const from = indexOf(draggedId.value)
-  if (event.dataTransfer?.dropEffect === 'none' && from !== -1 && from !== startIndex) {
-    emit('reorder', from, startIndex)
-  }
-  grabbedId.value = null
+function endDrag(cancel = false) {
+  if (cancel) moveTo(startIndex) // the browser took the gesture, or Escape: put the row back
   draggedId.value = null
+}
+
+// Keyboard: arrow keys on the handle move the row one place.
+async function moveWithKey(id: number, direction: number) {
+  draggedId.value = id
+  moveTo(indexOf(id) + direction)
+  draggedId.value = null
+  await nextTick() // the row moved in the page, so give the focus back to its handle
+  list.value?.querySelector<HTMLElement>(`[data-handle="${id}"]`)?.focus()
 }
 
 const totalMessage = computed(() => {
@@ -72,35 +83,40 @@ const totalMessage = computed(() => {
       </div>
     </div>
 
-    <div class="card overflow-hidden">
+    <div ref="list" class="card overflow-hidden">
       <div
         v-for="(founder, index) in founders"
         :key="founder.id"
-        :draggable="grabbedId === founder.id"
-        @dragstart="onDragStart($event, founder.id)"
-        @dragover.prevent="onDragOver(index)"
-        @drop.prevent
-        @dragend="onDragEnd"
-        class="card-row flex items-center gap-2.5 sm:gap-4 transition-colors"
+        :data-founder-index="index"
+        class="card-row flex items-center gap-2 sm:gap-4 transition-colors"
         :class="[
           index > 0 ? 'border-t border-slate-800' : '',
           draggedId === founder.id ? 'opacity-40 bg-slate-800' : ''
         ]"
       >
-        <div
-          class="hidden sm:block cursor-grab active:cursor-grabbing text-slate-400 hover:text-white"
+        <button
+          type="button"
+          class="drag-handle"
+          :data-handle="founder.id"
+          :aria-label="`Move ${founder.name || `founder ${index + 1}`}. Drag, or use the up and down arrow keys.`"
           title="Drag to reorder"
-          @mousedown="grabbedId = founder.id"
-          @mouseup="grabbedId = null"
+          @pointerdown="onPointerDown($event, founder.id)"
+          @pointermove="onPointerMove"
+          @pointerup="endDrag()"
+          @pointercancel="endDrag(true)"
+          @keydown.up.prevent="moveWithKey(founder.id, -1)"
+          @keydown.down.prevent="moveWithKey(founder.id, 1)"
+          @keydown.esc="endDrag(true)"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path d="M7 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
           </svg>
-        </div>
+        </button>
         <div class="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0"></div>
         <input
           v-model="founder.name"
           type="text"
+          autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done" @keydown.enter="($event.target as HTMLInputElement).blur()"
           autocomplete="off"
           placeholder="Founder name"
           :aria-label="`Founder ${index + 1} name`"
@@ -128,12 +144,12 @@ const totalMessage = computed(() => {
       </div>
 
       <!-- Option Pool -->
-      <div class="card-row flex items-center gap-2.5 sm:gap-4 border-t border-slate-800 bg-slate-950/40">
-        <div class="hidden sm:block w-4"></div>
+      <div class="card-row flex items-center gap-2 sm:gap-4 border-t border-slate-800 bg-slate-950/40">
+        <div class="w-6 flex-shrink-0"></div>
         <div class="w-2 h-2 bg-amber-500 rounded-full flex-shrink-0"></div>
         <span class="flex-1 min-w-0 text-slate-300">
           Option pool<InfoTooltip termKey="preMoneyOptionPool" />
-          <span class="text-xs text-slate-400 ml-1">at founding</span>
+          <span class="hidden sm:inline text-xs text-slate-400 ml-1">at founding</span>
         </span>
         <PercentInput
           :modelValue="initialOptionPool"

@@ -52,7 +52,7 @@ const summary = computed(() => {
   const lastRound = equityBreakdown.value.rounds.filter(r => r.postMoneyValuation > 0).pop()
   return [
     { label: 'Founders own', value: formatPercentage(founderShare), note: `after ${fundingRounds.value.length || 'no'} round${fundingRounds.value.length === 1 ? '' : 's'}${equityBreakdown.value.outstanding?.length ? ', SAFEs and notes counted at their cap' : ''}`, main: true },
-    { label: 'Founders get at exit', value: formatCurrency(founderPayout), note: `of a ${formatCurrency(exitValuation.value)} ${exitType.value === 'ipo' ? 'IPO' : 'sale'}`, main: true },
+    { label: 'Founders get', value: formatCurrency(founderPayout), note: `of a ${formatCurrency(exitValuation.value)} ${exitType.value === 'ipo' ? 'IPO' : 'sale'}`, main: true },
     { label: 'Total raised', value: formatCurrency(equityBreakdown.value.totalInvested), note: '', main: false },
     { label: 'Last post-money', value: lastRound?.postMoneyValuation ? formatCurrency(lastRound.postMoneyValuation) : 'n/a', note: '', main: false },
   ]
@@ -102,7 +102,7 @@ function onResetClick() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100">
+  <div class="min-h-dvh bg-slate-950 text-slate-100">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
       <header class="mb-10">
         <div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-5">

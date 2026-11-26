@@ -94,6 +94,7 @@ function foundersAfter(roundIndex: number): number {
           <input
             v-model="round.name"
             type="text"
+            autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done" @keydown.enter="($event.target as HTMLInputElement).blur()"
             aria-label="Round name"
             class="field flex-1 min-w-0 max-w-56 px-2 py-1 font-serif text-lg"
           />
@@ -125,7 +126,7 @@ function foundersAfter(roundIndex: number): number {
                   class="field w-full px-3 py-2 num"
                 />
               </div>
-              <p class="text-xs text-slate-400 mt-1.5">You can type 10m or 500k.</p>
+              <p class="fine-pointer-only text-xs text-slate-400 mt-1.5">You can type 10m or 500k.</p>
             </div>
             <div>
               <div class="flex items-center mb-2">
@@ -157,40 +158,41 @@ function foundersAfter(roundIndex: number): number {
                 :key="investor.id"
                 class="card-inset px-3 py-3 sm:px-4"
               >
-                <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <div class="grid grid-cols-[auto_minmax(0,1fr)_auto] sm:flex items-center gap-x-3 gap-y-2">
                   <div class="w-2 h-2 bg-sky-500 rounded-full flex-shrink-0"></div>
                   <input
                     v-model="investor.name"
                     type="text"
+                    autocapitalize="words" autocorrect="off" spellcheck="false" enterkeyhint="done" @keydown.enter="($event.target as HTMLInputElement).blur()"
                     list="investor-names"
                     autocomplete="off"
                     placeholder="Investor name"
                     aria-label="Investor name"
-                    class="field flex-1 min-w-0 basis-32 h-8 px-2 text-base sm:text-sm"
+                    class="field sm:flex-1 min-w-0 h-9 sm:h-8 px-2 text-base sm:text-sm"
                   />
-                  <div class="flex items-center gap-2 ml-auto">
+                  <div class="col-start-2 row-start-2 flex items-center gap-2">
                     <span class="text-slate-400">$</span>
                     <CurrencyInput
                       v-model="investor.amount"
                       :aria-label="`${investor.name || 'Investor'} investment, dollars`"
-                      class="field w-28 h-8 px-2 text-right text-base sm:text-sm num"
+                      class="field flex-1 sm:flex-none min-w-0 sm:w-28 h-9 sm:h-8 px-2 sm:text-right text-base sm:text-sm num"
                     />
                     <span class="text-xs text-sky-400 w-14 text-right num" title="Share of the company bought in this round">
                       {{ formatPercentage(investorPercentage(round, investor)) }}
                     </span>
-                    <button
-                      type="button"
-                      @click="emit('removeInvestor', round, investor.id)"
-                      class="icon-btn -mr-2"
-                      :disabled="round.investors.length <= 1"
-                      :title="round.investors.length <= 1 ? 'A round needs one investor' : undefined"
-                      :aria-label="`Remove ${investor.name || 'investor'}`"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                      </svg>
-                    </button>
                   </div>
+                <button
+                  type="button"
+                  @click="emit('removeInvestor', round, investor.id)"
+                  class="icon-btn col-start-3 row-start-1 -mr-2"
+                  :disabled="round.investors.length <= 1"
+                  :title="round.investors.length <= 1 ? 'A round needs one investor' : undefined"
+                  :aria-label="`Remove ${investor.name || 'investor'}`"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
                 </div>
 
                 <!-- Terms -->
