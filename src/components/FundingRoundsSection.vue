@@ -308,7 +308,7 @@ function foundersAfter(roundIndex: number): number {
     </div>
 
     <!-- Add buttons -->
-    <div class="mt-8">
+    <div class="no-print mt-8">
       <p class="label mb-3">Add early or other funding</p>
       <div class="flex flex-wrap gap-2 mb-6">
         <button type="button" class="btn" title="Simple Agreement for Future Equity. Converts to stock in the next priced round." @click="emit('addInstrument', 'safe')">+ SAFE</button>

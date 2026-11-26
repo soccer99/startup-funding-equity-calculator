@@ -1,6 +1,7 @@
 import { ref, computed, watch } from 'vue'
 import type { Founder, FundingRound, Instrument, InstrumentKind, ExitPayout, ExitType, ExitOptions, AcquisitionOptions, IPOOptions } from '@/types'
 import { calculateEquity, calculatePayouts } from '@/lib/equity'
+import { sanitize, encodeScenario, type Scenario } from '@/lib/share'
 import { getNextRoundPreset, getPresetById } from '@/data/roundPresets'
 
 const STORAGE_KEY = 'equity-calculator-data'
@@ -19,21 +20,13 @@ const DEFAULT_IPO_OPTIONS: IPOOptions = {
   offeringAmount: 0,
 }
 
-interface StoredData {
-  founders: Founder[]
-  initialOptionPool: number
-  fundingRounds: FundingRound[]
-  instruments: Instrument[]
-  exitValuation: number
-  exitType: ExitType
-  exitOptions: ExitOptions
-}
+type StoredData = Scenario
 
 function loadFromStorage(): Partial<StoredData> {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
-      return JSON.parse(stored)
+      return sanitize(JSON.parse(stored))
     }
   } catch (e) {
     console.warn('Failed to load from localStorage:', e)
@@ -49,8 +42,17 @@ function saveToStorage(data: StoredData) {
   }
 }
 
+// The scenario from a share link, if the page was opened with one. main.ts reads the link
+// before the app starts, because the link is compressed and reading it takes a moment.
+let sharedScenario: Partial<Scenario> | null = null
+export const setSharedScenario = (scenario: Partial<Scenario> | null) => (sharedScenario = scenario)
+
 export function useEquityCalculator() {
-  const stored = loadFromStorage()
+  // A share link carries a full scenario after the "#". It wins over the saved data,
+  // but it is not saved until the user asks, so a link never overwrites their own scenario.
+  const shared = sharedScenario
+  const isSharedView = ref(shared !== null)
+  const stored = shared ?? loadFromStorage()
 
   const founders = ref<Founder[]>(stored.founders ?? [
     { id: 1, name: 'Founder 1', percentage: 50 },
@@ -78,21 +80,42 @@ export function useEquityCalculator() {
   let nextInvestorId = Math.max(0, ...fundingRounds.value.flatMap(r => r.investors.map(i => i.id))) + 1
 
   // Watch and save to localStorage
+  const scenario = (): StoredData => ({
+    founders: founders.value,
+    initialOptionPool: initialOptionPool.value,
+    fundingRounds: fundingRounds.value,
+    instruments: instruments.value,
+    exitValuation: exitValuation.value,
+    exitType: exitType.value,
+    exitOptions: exitOptions.value,
+  })
+
+  // Save each change in this browser, except while a shared link is open.
   watch(
     [founders, initialOptionPool, fundingRounds, instruments, exitValuation, exitType, exitOptions],
     () => {
-      saveToStorage({
-        founders: founders.value,
-        initialOptionPool: initialOptionPool.value,
-        fundingRounds: fundingRounds.value,
-        instruments: instruments.value,
-        exitValuation: exitValuation.value,
-        exitType: exitType.value,
-        exitOptions: exitOptions.value,
-      })
+      if (!isSharedView.value) saveToStorage(scenario())
     },
     { deep: true }
   )
+
+  const clearHash = () => history.replaceState(null, '', location.pathname + location.search)
+
+  /** A link that opens this page with every input as it is now. */
+  const shareUrl = async () => location.origin + location.pathname + (await encodeScenario(scenario()))
+
+  /** Keep the shared scenario as the user's own. It replaces what was saved before. */
+  function keepShared() {
+    isSharedView.value = false
+    saveToStorage(scenario())
+    clearHash()
+  }
+
+  /** Leave the shared scenario and go back to the saved one. */
+  function discardShared() {
+    clearHash()
+    location.reload()
+  }
 
   function addFounder() {
     founders.value.push({
@@ -317,6 +340,11 @@ export function useEquityCalculator() {
     undoRemoveRound,
     removedRound,
     splitFoundersEqually,
+    scenario,
+    shareUrl,
+    isSharedView,
+    keepShared,
+    discardShared,
     addInstrument,
     removeInstrument,
     addInvestor,

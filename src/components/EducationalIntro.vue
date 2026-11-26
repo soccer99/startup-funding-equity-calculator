@@ -45,7 +45,7 @@ const sources = {
 </script>
 
 <template>
-  <section class="section card overflow-hidden">
+  <section class="no-print section card overflow-hidden">
     <h2>
       <button
         type="button"

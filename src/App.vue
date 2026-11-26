@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useEquityCalculator } from '@/composables/useEquityCalculator'
 import { formatCurrency, formatPercentage } from '@/utils/format'
+import { buildCsv } from '@/lib/share'
 import EducationalIntro from '@/components/EducationalIntro.vue'
 import FoundersSection from '@/components/FoundersSection.vue'
 import FundingRoundsSection from '@/components/FundingRoundsSection.vue'
@@ -25,6 +26,11 @@ const {
   removeFounder,
   reorderFounders,
   splitFoundersEqually,
+  scenario,
+  shareUrl,
+  isSharedView,
+  keepShared,
+  discardShared,
   addInstrument,
   removeInstrument,
   addFundingRound,
@@ -52,6 +58,33 @@ const summary = computed(() => {
   ]
 })
 
+// ----- Save and share -----
+const copied = ref(false)
+
+async function copyLink() {
+  const url = await shareUrl()
+  try {
+    await navigator.clipboard.writeText(url)
+  } catch {
+    // No clipboard access (old browser, or the page is not focused): put the link in the address bar.
+    history.replaceState(null, '', url)
+  }
+  copied.value = true
+  setTimeout(() => (copied.value = false), 2500)
+}
+
+function downloadSpreadsheet() {
+  const csv = buildCsv(scenario(), equityBreakdown.value, exitPayouts.value, effectiveExitProceeds.value.net)
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+  link.download = `startup-equity-${new Date().toISOString().slice(0, 10)}.csv`
+  link.click()
+  URL.revokeObjectURL(link.href)
+}
+
+// The browser's print window has "Save as PDF". The print styles are in style.css.
+const savePdf = () => window.print()
+
 // Reset deletes all data, so it needs a second click.
 const confirmingReset = ref(false)
 let resetTimer: ReturnType<typeof setTimeout> | undefined
@@ -72,25 +105,46 @@ function onResetClick() {
   <div class="min-h-screen bg-slate-950 text-slate-100">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
       <header class="mb-10">
-        <div class="flex items-start justify-between gap-4">
+        <div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-5">
           <div>
             <h1 class="font-serif text-3xl sm:text-4xl tracking-tight text-white mb-3">
               Startup Equity Calculator
             </h1>
-            <p class="text-slate-300 max-w-2xl">
+            <p class="text-slate-300 max-w-xl">
               See how each funding round changes who owns the company, and who gets what at exit.
             </p>
           </div>
-          <button
-            type="button"
-            @click="onResetClick"
-            class="flex-shrink-0"
-            :class="confirmingReset ? 'btn !border-red-400 !text-red-400' : 'btn-quiet'"
-          >
-            {{ confirmingReset ? 'Delete all data?' : 'Reset' }}
-          </button>
+          <div class="sm:ml-auto">
+            <div class="no-print flex flex-wrap sm:justify-end gap-2">
+              <button type="button" class="btn" title="Copy a link that opens this page with all your inputs. The numbers are in the link itself." @click="copyLink">
+                {{ copied ? 'Link copied' : 'Copy link' }}
+              </button>
+              <button type="button" class="btn-quiet" title="Opens the print window. Choose Save as PDF." @click="savePdf">PDF</button>
+              <button type="button" class="btn-quiet" title="Download a .csv file for Excel, Numbers, or Google Sheets." @click="downloadSpreadsheet">Spreadsheet</button>
+              <button
+                type="button"
+                @click="onResetClick"
+                :class="confirmingReset ? 'btn !border-red-400 !text-red-400' : 'btn-quiet'"
+              >
+                {{ confirmingReset ? 'Delete all data?' : 'Reset' }}
+              </button>
+            </div>
+            <p class="mt-3 text-xs text-slate-400 sm:text-right max-w-xs sm:ml-auto">
+              <svg xmlns="http://www.w3.org/2000/svg" class="inline h-3.5 w-3.5 mr-1 -mt-0.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />
+              </svg>Private. Your numbers never leave this browser. No server, no account, no tracking.
+            </p>
+          </div>
         </div>
       </header>
+
+      <div v-if="isSharedView" class="no-print card card-row mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm" role="status">
+        <span class="text-slate-200">You opened a shared scenario. Your own saved scenario is not changed.</span>
+        <span class="flex flex-wrap gap-2">
+          <button type="button" class="btn" @click="keepShared">Keep this as mine</button>
+          <button type="button" class="btn-quiet" @click="discardShared">Go back to mine</button>
+        </span>
+      </div>
 
       <!-- The answer first. The two founder numbers are the focal point of the page. -->
       <dl class="card grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-slate-800 overflow-hidden mb-6">
@@ -151,7 +205,8 @@ function onResetClick() {
         <p class="text-slate-400 text-sm max-w-2xl">
           For learning only. This is not legal, tax, or investment advice. Real deals can include vesting,
           anti-dilution terms, warrants, and other terms that this calculator does not model.
-          Your data stays in this browser.
+          Your data stays in this browser. A link from "Copy link" holds your numbers in the link itself,
+          so only the people you send it to can see them.
         </p>
       </footer>
     </div>

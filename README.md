@@ -23,6 +23,8 @@ A web-based tool for modeling startup equity dilution across funding rounds and 
   - Acquisition: escrow holdbacks, transaction costs, management carve-outs, deal structure (cash/stock/mixed)
   - IPO: preferred stock converts to common (no preferences), underwriter fees on the money raised, lockup periods
 - **Exit Waterfall Calculations** - See how proceeds distribute based on liquidation preferences and participation rights
+- **Save and Share** - Copy a short link that opens the page with every input set, save a PDF (print), or download a spreadsheet (.csv)
+- **Private** - No server and no account. The numbers stay in the browser, and a share link holds them after the `#`, which browsers do not send to a server
 - **Educational Content** - Built-in glossary with hover tooltips explaining investment terms
 - **Persistent State** - Your data saves to localStorage automatically
 

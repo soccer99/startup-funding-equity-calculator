@@ -1,6 +1,7 @@
 // Run with: npm test   (plain Node, no test framework)
 import assert from 'node:assert/strict'
 import { calculateEquity, calculatePayouts, owed } from '../equity.ts'
+import { buildCsv, decodeScenario, encodeScenario, sanitize } from '../share.ts'
 
 const M = 1_000_000
 const near = (actual: number, expected: number, msg: string) =>
@@ -288,6 +289,64 @@ const instrument = (kind: 'safe' | 'note' | 'loan', name: string, amount: number
   rows = calculatePayouts(b, 100 * M, 'ipo')
   assert.ok(!rows.some(r => r.type === 'debt'), 'IPO value is equity value: loans are not taken from it')
   near(total(rows), 100 * M, 'IPO sums to value')
+}
+
+// --- Share link and spreadsheet -----------------------------------------------
+{
+  const a = rnd2('Série A', 20 * M, 10, inv('VC', 5 * M, 2, true))
+  const scenario = {
+    founders: [{ id: 1, name: 'Zoë', percentage: 60 }, { id: 2, name: '=HYPERLINK("http://x","click")', percentage: 40 }],
+    initialOptionPool: 0,
+    fundingRounds: [a],
+    instruments: [instrument('safe', 'Angel, Inc.', 1 * M, { valuationCap: 10 * M, convertsInRoundId: a.id })],
+    exitValuation: 50 * M,
+    exitType: 'ipo' as const,
+    exitOptions: {
+      acquisition: { dealStructure: 'mixed' as const, stockPercentage: 35, escrowPercent: 10, managementCarveout: 250_000, transactionCostsPercent: 2 },
+      ipo: { underwriterFeesPercent: 7, lockupDays: 90, offeringAmount: 10 * M },
+    },
+  }
+
+  // A link must bring back every input, and the same results.
+  const link = await encodeScenario(scenario)
+  const back = (await decodeScenario(link))!
+  const strip = (v: unknown) => JSON.parse(JSON.stringify(v, (key, value) => (key === 'id' || key === 'convertsInRoundId' ? undefined : value)))
+  assert.deepEqual(strip(back), strip(scenario), 'link round trip keeps every input')
+  assert.equal(back.instruments![0]!.convertsInRoundId, back.fundingRounds![0]!.id, 'the SAFE still points at its round')
+  const before = calculateEquity(scenario.founders, 0, scenario.fundingRounds, scenario.instruments)
+  const after = calculateEquity(back.founders!, back.initialOptionPool!, back.fundingRounds!, back.instruments!)
+  assert.deepEqual(after.stakeholders.map(s => s.percentage), before.stakeholders.map(s => s.percentage), 'same cap table from the link')
+  // The link is far shorter than plain JSON in base64 (which is about 4/3 of the JSON length).
+  const jsonLink = Math.ceil((JSON.stringify(scenario).length * 4) / 3)
+  assert.ok(link.length < jsonLink / 3, `link is short: ${link.length} vs ${jsonLink} for JSON`)
+  console.log(`share link: ${link.length} characters (plain JSON would be ${jsonLink})`)
+
+  // The default page is a very short link.
+  const empty = { ...scenario, founders: founders(50, 50), fundingRounds: [], instruments: [], exitValuation: 100 * M, exitType: 'acquisition' as const,
+    exitOptions: { acquisition: { dealStructure: 'cash' as const, stockPercentage: 50, escrowPercent: 0, managementCarveout: 0, transactionCostsPercent: 0 }, ipo: { underwriterFeesPercent: 0, lockupDays: 180, offeringAmount: 0 } } }
+  const emptyLink = await encodeScenario(empty)
+  assert.deepEqual(strip(await decodeScenario(emptyLink)), strip(empty), 'defaults come back')
+  console.log(`share link for the default page: ${emptyLink.length} characters`)
+
+  // Bad links and bad data must not break the app.
+  assert.equal(await decodeScenario(''), null)
+  assert.equal(await decodeScenario('#z1%%%not-base64'), null)
+  assert.equal(await decodeScenario('#j1' + btoa('{"a":1}')), null)
+  assert.equal(await decodeScenario('#j1' + btoa('[[[1,2]],"x",5,null]')) === null, false, 'odd values fall back to defaults')
+  assert.equal(await decodeScenario('#z1' + 'A'.repeat(9000)), null, 'very long link is refused')
+  const dirty = sanitize({ founders: [{ name: 42, percentage: 'lots' }, null, 'x'], fundingRounds: 'no', exitType: 'heist', instruments: [{ kind: 'bomb', amount: -5, name: {} }] })
+  assert.deepEqual(dirty.founders, [{ id: 1, name: '', percentage: 0 }])
+  assert.equal(dirty.fundingRounds, undefined)
+  assert.equal(dirty.exitType, 'acquisition')
+  assert.equal(dirty.instruments![0]!.kind, 'safe')
+  assert.equal(dirty.instruments![0]!.amount, 0)
+
+  // Spreadsheet: commas are quoted, and a name cannot run as a formula.
+  const csv = buildCsv(scenario, before, calculatePayouts(before, 50 * M, 'ipo'), 50 * M)
+  assert.ok(csv.includes('"Angel, Inc."'), 'comma in a name is quoted')
+  assert.ok(csv.includes(`"'=HYPERLINK(""http://x"",""click"")"`), 'formula in a name is made plain text')
+  assert.ok(csv.includes('WHO GETS WHAT') && csv.includes('CAP TABLE'), 'has the result sections')
+  assert.ok(csv.split('\r\n').some(line => line.startsWith('Zoë,Founder,')), 'cap table row for a founder')
 }
 
 // --- Random scenarios: rules that must always hold --------------------------

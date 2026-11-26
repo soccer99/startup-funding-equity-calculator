@@ -145,3 +145,56 @@ input[type='number']::-webkit-outer-spin-button {
 .v-popper__popper {
   z-index: 9999;
 }
+
+/* ---------- Print and "Save as PDF" ----------
+   Flip the palette to ink on white paper, and hide the controls that do nothing on paper. */
+@media print {
+  :root {
+    --color-slate-50: #121210;
+    --color-slate-100: #1b1a17;
+    --color-slate-200: #2a2823;
+    --color-slate-300: #3f3c35;
+    --color-slate-400: #5d594f;
+    --color-slate-500: #7d786b;
+    --color-slate-600: #a8a394;
+    --color-slate-700: #cfcabd;
+    --color-slate-800: #e5e2d9;
+    --color-slate-900: #ffffff;
+    --color-slate-950: #ffffff;
+    --color-white: #121210;
+    --color-emerald-400: #1f7a55;
+    --color-sky-400: #2f62b0;
+    --color-amber-400: #8a6510;
+    --color-red-400: #b3382a;
+  }
+  html {
+    color-scheme: light;
+  }
+  * {
+    print-color-adjust: exact; /* keep the bars and dots */
+    -webkit-print-color-adjust: exact;
+  }
+  .no-print,
+  .btn,
+  .btn-quiet,
+  .icon-btn,
+  .chip:not([aria-pressed='true']),
+  [title='Drag to reorder'],
+  button[aria-label^='What is'] {
+    display: none !important;
+  }
+  .card {
+    box-shadow: none;
+  }
+  .section {
+    margin-bottom: 1.5rem;
+  }
+  tr,
+  .card-row,
+  .card-inset {
+    break-inside: avoid;
+  }
+  h2 {
+    break-after: avoid;
+  }
+}
