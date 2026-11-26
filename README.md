@@ -6,18 +6,22 @@ A web-based tool for modeling startup equity dilution across funding rounds and 
 
 ## Features
 
-- **Founder Equity Management** - Add multiple founders with customizable ownership percentages and drag-to-reorder
+- **Founder Equity Management** - Add multiple founders with customizable ownership percentages, split equally, and drag-to-reorder
 - **Pre-Money Option Pool** - Model initial employee option pools before funding
 - **Funding Round Simulation** - Add multiple rounds (Pre-Seed through Series C) with configurable terms:
   - Pre-money valuation
   - Post-money option pool expansion
   - Multiple investors per round
-  - Liquidation preferences (1x, 1.5x, 2x, 3x)
+  - Liquidation preferences (none, 1x, 1.5x, 2x, 3x)
   - Participating vs non-participating preferred stock
+- **SAFEs, Convertible Notes and Loans** - Add early funding outside a priced round:
+  - SAFE: post-money or pre-money valuation cap, discount, and the round that converts it
+  - Convertible note: the same, plus interest, time, and the cash multiple in a sale
+  - Loan: principal and interest, paid before all stock in a sale
 - **Cap Table Visualization** - Track ownership percentages across all funding rounds with sortable views
 - **Exit Scenario Modeling** - Compare acquisition vs IPO outcomes:
   - Acquisition: escrow holdbacks, transaction costs, management carve-outs, deal structure (cash/stock/mixed)
-  - IPO: underwriter fees, lockup periods
+  - IPO: preferred stock converts to common (no preferences), underwriter fees on the money raised, lockup periods
 - **Exit Waterfall Calculations** - See how proceeds distribute based on liquidation preferences and participation rights
 - **Educational Content** - Built-in glossary with hover tooltips explaining investment terms
 - **Persistent State** - Your data saves to localStorage automatically
@@ -79,3 +83,13 @@ The project includes a GitHub Actions workflow that automatically deploys to Git
 ## Disclaimer
 
 This calculator provides simplified estimates for educational purposes. Actual equity structures may include convertible notes, SAFEs, vesting schedules, anti-dilution provisions, and other complex terms. Consult with legal and financial advisors for real transactions.
+
+## Tests
+
+The cap table and exit math is in `src/lib/equity.ts`. It has no UI code.
+
+```sh
+npm test
+```
+
+The tests in `src/lib/__tests__/equity.test.ts` check worked examples from published sources, and 3,000 random scenarios.

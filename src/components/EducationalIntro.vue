@@ -3,205 +3,284 @@ import { ref } from 'vue'
 import InfoTooltip from './InfoTooltip.vue'
 
 const isExpanded = ref(false)
+
+// Further reading for each step. Each page was read and checked against the text here (November 2026).
+const sources = {
+  equity: [
+    { by: 'Carta', title: 'Share dilution', url: 'https://carta.com/learn/startups/equity-management/share-dilution/' },
+    { by: 'Holloway', title: 'A Primer on Ownership', url: 'https://www.holloway.com/g/venture-capital/sections/a-primer-on-ownership' },
+  ],
+  roundMath: [
+    { by: 'Investopedia', title: 'Pre-Money vs. Post-Money Valuation', url: 'https://www.investopedia.com/ask/answers/difference-between-premoney-and-postmoney/' },
+    { by: 'Holloway', title: 'Price, Dilution, and Valuation', url: 'https://www.holloway.com/g/venture-capital/sections/a-primer-on-ownership' },
+  ],
+  safe: [
+    { by: 'Y Combinator', title: 'The SAFE', url: 'https://www.ycombinator.com/safe/' },
+    { by: 'Y Combinator', title: 'SAFE user guide (PDF)', url: 'https://bookface-static.ycombinator.com/assets/ycdc/SAFE%20User%20Guide-a47c6588327d73aa2799e61ed7c2cae9f1a0ee9acfa9c43b62039dc06e715832.pdf' },
+    { by: 'Westaway', title: 'Founder Guide: Convertible Notes', url: 'https://www.westaway.com/guides/convertible-notes' },
+  ],
+  stock: [
+    { by: 'Carta', title: 'Equity in business: common and preferred shares', url: 'https://carta.com/learn/equity/' },
+  ],
+  pool: [
+    { by: 'Venture Hacks', title: 'The Option Pool Shuffle', url: 'https://venturehacks.com/option-pool-shuffle' },
+    { by: 'Cooley GO', title: 'Negotiating the Option Pool', url: 'https://www.cooleygo.com/negotiating-option-pool/' },
+    { by: 'Carta', title: 'What is an option pool?', url: 'https://carta.com/learn/startups/equity-management/option-pool/' },
+  ],
+  exit: [
+    { by: 'Carta', title: 'Liquidation preferences', url: 'https://carta.com/learn/equity/liquidity-events/liquidation-preferences/' },
+    { by: 'Andreessen Horowitz', title: 'Funding When Capital Isn’t Cheap', url: 'https://a16z.com/funding-when-capital-isnt-cheap/' },
+    { by: 'Carta', title: 'Waterfall analysis', url: 'https://carta.com/learn/startups/exit-strategies/waterfall-analysis/' },
+    { by: 'Cooley GO', title: 'Venture financing data: how common each term is', url: 'https://www.cooleygo.com/trends/' },
+  ],
+  ipo: [
+    { by: 'SEC Investor.gov', title: 'IPO lockup agreements', url: 'https://www.investor.gov/introduction-investing/investing-basics/glossary/initial-public-offerings-lockup-agreements' },
+    { by: 'PwC / AICPA', title: 'Economic rights of preferred stock (conversion in an IPO)', url: 'https://viewpoint.pwc.com/dt/us/en/aicpav2/avg-pci/avg-pci/avg-pci_appB/avg-pci_appB_07/avg-pci-appB-07-Economic-Rights.html' },
+  ],
+  watch: [
+    { by: 'Carta', title: 'Down rounds', url: 'https://carta.com/learn/startups/fundraising/down-rounds/' },
+    { by: 'Orrick', title: 'Raising a Down Round and How to Be Prepared', url: 'https://www.orrick.com/en/tech-studio/insights/raising-a-down-round-and-how-to-be-prepared' },
+  ],
+}
 </script>
 
 <template>
-  <section class="mb-10 border border-slate-800 rounded bg-slate-900/50">
-    <button
-      @click="isExpanded = !isExpanded"
-      class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-slate-800/30 transition-colors"
-    >
-      <div>
-        <h2 class="text-lg font-medium text-white">Understanding Startup Equity</h2>
-        <p class="text-sm text-slate-500 mt-1">
-          Key concepts, formulas, and terms you need to know
+  <section class="section card overflow-hidden">
+    <h2>
+      <button
+        type="button"
+        @click="isExpanded = !isExpanded"
+        :aria-expanded="isExpanded"
+        class="w-full card-pad flex items-center justify-between gap-4 text-left hover:bg-slate-800/40 transition-colors"
+      >
+        <span>
+          <span class="block font-serif text-xl text-white">New to startup equity?</span>
+          <span class="block text-sm text-slate-400 mt-1">A five-minute lesson, with links to trusted guides for each step.</span>
+        </span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 flex-shrink-0 text-slate-400 transition-transform"
+          :class="{ 'rotate-180': isExpanded }"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+    </h2>
+
+    <div v-if="isExpanded" class="card-x pt-6 pb-8 border-t border-slate-800 space-y-8 text-sm text-slate-300 leading-relaxed">
+      <!-- 1 -->
+      <div class="max-w-2xl">
+        <h3 class="font-serif text-lg text-white mb-2">1. Equity is a slice of the company</h3>
+        <p>
+          Think of the company as a pie. Equity<InfoTooltip termKey="equity" /> is your slice, shown as a percent.
+          At the start, the founders own 100%.
+        </p>
+        <p class="mt-2">
+          To raise money, the company makes new slices and sells them to investors. Each old slice becomes a smaller
+          percent of the pie. This is dilution<InfoTooltip termKey="dilution" />. It can still be a good trade:
+          a smaller slice of a much larger pie can be worth more.
+        </p>
+
+        <p class="mt-3 text-xs text-slate-400 max-w-2xl">
+          Read more:
+          <template v-for="(source, index) in sources.equity" :key="source.url + source.title">
+            <a :href="source.url" target="_blank" rel="noopener" class="text-slate-100 underline underline-offset-2 hover:no-underline">{{ source.title }}</a>
+            ({{ source.by }}){{ index < sources.equity.length - 1 ? ' · ' : '' }}
+          </template>
         </p>
       </div>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-5 w-5 text-slate-500 transition-transform"
-        :class="{ 'rotate-180': isExpanded }"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7" />
-      </svg>
-    </button>
 
-    <Transition
-      enter-active-class="transition ease-out duration-200"
-      enter-from-class="opacity-0"
-      enter-to-class="opacity-100"
-      leave-active-class="transition ease-in duration-150"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0"
-    >
-      <div v-if="isExpanded" class="px-6 pb-6 border-t border-slate-800">
-        <div class="grid md:grid-cols-2 gap-6 mt-6">
-          <!-- The Pie Metaphor -->
+      <!-- 2 -->
+      <div>
+        <h3 class="font-serif text-lg text-white mb-2">2. The math of one funding round</h3>
+        <p class="max-w-2xl mb-4">
+          Investors and founders agree on what the company is worth before the money comes in.
+          This is the pre-money valuation<InfoTooltip termKey="preMoneyValuation" />. All the other numbers follow from it.
+        </p>
+        <div class="card-inset divide-y divide-slate-800 max-w-2xl">
+          <div class="px-4 py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
+            <span class="text-slate-400">Post-money value = pre-money + investment</span>
+            <span class="num text-white">$8M + $2M = $10M</span>
+          </div>
+          <div class="px-4 py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
+            <span class="text-slate-400">Investor's share = investment ÷ post-money</span>
+            <span class="num text-white">$2M ÷ $10M = 20%</span>
+          </div>
+          <div class="px-4 py-3 flex flex-col sm:flex-row sm:justify-between gap-1">
+            <span class="text-slate-400">Your new share = old share × (100% − new shares)</span>
+            <span class="num text-white">100% × 80% = 80%</span>
+          </div>
+        </div>
+
+        <p class="mt-3 text-xs text-slate-400 max-w-2xl">
+          Read more:
+          <template v-for="(source, index) in sources.roundMath" :key="source.url + source.title">
+            <a :href="source.url" target="_blank" rel="noopener" class="text-slate-100 underline underline-offset-2 hover:no-underline">{{ source.title }}</a>
+            ({{ source.by }}){{ index < sources.roundMath.length - 1 ? ' · ' : '' }}
+          </template>
+        </p>
+      </div>
+
+      <!-- SAFEs and notes -->
+      <div class="max-w-2xl">
+        <h3 class="font-serif text-lg text-white mb-2">Before the first priced round: SAFEs and notes</h3>
+        <p>
+          Very young companies are hard to value. So early investors often use a SAFE<InfoTooltip termKey="safe" />
+          or a convertible note<InfoTooltip termKey="convertibleNote" />. The investor pays now and gets stock later,
+          in the first priced round.
+        </p>
+        <p class="mt-2">
+          A valuation cap<InfoTooltip termKey="valuationCap" /> sets the highest price they can pay. Example: $500K on a SAFE
+          with a $5M post-money cap is 10% of the company just before the round. The new round then dilutes it, like all other holders.
+          A note is a loan, so it also earns interest, and the interest converts too.
+        </p>
+        <p class="mt-3 text-xs text-slate-400 max-w-2xl">
+          Read more:
+          <template v-for="(source, index) in sources.safe" :key="source.url + source.title">
+            <a :href="source.url" target="_blank" rel="noopener" class="text-slate-100 underline underline-offset-2 hover:no-underline">{{ source.title }}</a>
+            ({{ source.by }}){{ index < sources.safe.length - 1 ? ' · ' : '' }}
+          </template>
+        </p>
+      </div>
+
+      <!-- 3 -->
+      <div>
+        <h3 class="font-serif text-lg text-white mb-3">3. Two kinds of stock</h3>
+        <div class="grid sm:grid-cols-2 gap-4 max-w-2xl">
+          <div class="flex gap-3">
+            <div class="w-1 bg-emerald-500 rounded"></div>
+            <div>
+              <div class="text-white font-medium">Common stock<InfoTooltip termKey="commonStock" /></div>
+              <p class="text-slate-400">Founders and employees hold it. It has no special rights.</p>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="w-1 bg-sky-500 rounded"></div>
+            <div>
+              <div class="text-white font-medium">Preferred stock<InfoTooltip termKey="preferredStock" /></div>
+              <p class="text-slate-400">Investors buy it. In a sale, it is paid before common stock.</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="mt-3 text-xs text-slate-400 max-w-2xl">
+          Read more:
+          <template v-for="(source, index) in sources.stock" :key="source.url + source.title">
+            <a :href="source.url" target="_blank" rel="noopener" class="text-slate-100 underline underline-offset-2 hover:no-underline">{{ source.title }}</a>
+            ({{ source.by }}){{ index < sources.stock.length - 1 ? ' · ' : '' }}
+          </template>
+        </p>
+      </div>
+
+      <!-- 4 -->
+      <div class="max-w-2xl">
+        <h3 class="font-serif text-lg text-white mb-2">4. The option pool</h3>
+        <p>
+          An option pool<InfoTooltip termKey="optionPool" /> is a group of shares set aside to give to future employees.
+          A pool is often 10% to 20% of the company.
+        </p>
+        <p class="mt-2">
+          A new pool is a new slice, so it dilutes the other owners. Investors usually ask that the pool is made
+          before they invest. Then the founders take all of that dilution and the new investor takes none.
+          This is the "option pool shuffle"<InfoTooltip termKey="optionPoolShuffle" />. This calculator works this way.
+        </p>
+
+        <p class="mt-3 text-xs text-slate-400 max-w-2xl">
+          Read more:
+          <template v-for="(source, index) in sources.pool" :key="source.url + source.title">
+            <a :href="source.url" target="_blank" rel="noopener" class="text-slate-100 underline underline-offset-2 hover:no-underline">{{ source.title }}</a>
+            ({{ source.by }}){{ index < sources.pool.length - 1 ? ' · ' : '' }}
+          </template>
+        </p>
+      </div>
+
+      <!-- 5 -->
+      <div>
+        <h3 class="font-serif text-lg text-white mb-2">5. Who gets paid when the company is sold</h3>
+        <p class="max-w-2xl mb-4">
+          The money is paid in order<InfoTooltip termKey="exitWaterfall" />. Each step is paid in full before the next step gets anything.
+        </p>
+        <ol class="card-inset divide-y divide-slate-800 max-w-2xl">
+          <li class="px-4 py-3"><span class="text-white font-medium">First: debts and deal costs.</span> Loans, unconverted notes, lawyers, and bankers.</li>
+          <li class="px-4 py-3">
+            <span class="text-white font-medium">Second: investors' preferences.</span>
+            A liquidation preference<InfoTooltip termKey="liquidationPreference" /> gives investors their money back first.
+            "1x" means one times the amount they invested.
+          </li>
+          <li class="px-4 py-3"><span class="text-white font-medium">Last: all the rest.</span> It is split by ownership percent.</li>
+        </ol>
+
+        <div class="grid sm:grid-cols-2 gap-4 max-w-2xl mt-4">
           <div>
-            <h3 class="text-sm font-medium text-slate-300 uppercase tracking-wide mb-3">The Pie Metaphor</h3>
-            <div class="space-y-3 text-sm text-slate-400">
-              <p>
-                Think of your startup as a pie. At the start, founders own 100%.
-              </p>
-              <p>
-                <span class="text-white">The Trade:</span> When you raise funding, you're baking a larger pie and giving new pieces to investors.
-              </p>
-              <p>
-                <span class="text-white">The Result:</span> Your percentage shrinks, but the pie (valuation<InfoTooltip termKey="postMoneyValuation" />) is larger, so your slice's value should increase.
-              </p>
-            </div>
+            <div class="text-white font-medium">Non-participating<InfoTooltip termKey="nonParticipating" /></div>
+            <p class="text-slate-400">
+              The usual deal. The investor picks the larger of two amounts: the preference, or their percent of the sale. Not both.
+            </p>
           </div>
-
-          <!-- Key Formulas -->
           <div>
-            <h3 class="text-sm font-medium text-slate-300 uppercase tracking-wide mb-3">Key Formulas</h3>
-            <div class="space-y-2 text-sm font-mono">
-              <div class="flex justify-between py-2 border-b border-slate-800">
-                <span class="text-slate-500">Post-Money Valuation</span>
-                <span class="text-slate-300">Pre-Money + Investment</span>
-              </div>
-              <div class="flex justify-between py-2 border-b border-slate-800">
-                <span class="text-slate-500">Investor Ownership</span>
-                <span class="text-slate-300">Investment / Post-Money</span>
-              </div>
-              <div class="flex justify-between py-2">
-                <span class="text-slate-500">New Ownership</span>
-                <span class="text-slate-300">Old % x (1 - Investor %)</span>
-              </div>
-            </div>
+            <div class="text-white font-medium">Participating<InfoTooltip termKey="participatingPreferred" /></div>
+            <p class="text-slate-400">
+              Rare, and worse for founders. The investor takes the preference and also their percent of the rest.
+            </p>
           </div>
         </div>
 
-        <!-- Key Terms -->
-        <div class="mt-8">
-          <h3 class="text-sm font-medium text-slate-300 uppercase tracking-wide mb-4">Key Terms</h3>
-          <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="text-sm">
-              <div class="text-white mb-1">
-                Pro-Rata<InfoTooltip termKey="proRata" />
-              </div>
-              <p class="text-slate-500">Distributing based on ownership percentage.</p>
-            </div>
-            <div class="text-sm">
-              <div class="text-white mb-1">
-                Liquidation Preference<InfoTooltip termKey="liquidationPreference" />
-              </div>
-              <p class="text-slate-500">Investors get paid back first before founders.</p>
-            </div>
-            <div class="text-sm">
-              <div class="text-white mb-1">
-                Participating<InfoTooltip termKey="participatingPreferred" />
-              </div>
-              <p class="text-slate-500">Investor gets preference plus pro-rata share.</p>
-            </div>
-            <div class="text-sm">
-              <div class="text-white mb-1">
-                Non-Participating<InfoTooltip termKey="nonParticipating" />
-              </div>
-              <p class="text-slate-500">Investor chooses preference or pro-rata share.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Stock Types -->
-        <div class="mt-8">
-          <h3 class="text-sm font-medium text-slate-300 uppercase tracking-wide mb-4">Stock Types</h3>
-          <div class="grid sm:grid-cols-2 gap-4">
-            <div class="flex gap-3 text-sm">
-              <div class="w-1 bg-emerald-500 rounded"></div>
-              <div>
-                <div class="text-white mb-1">Common Stock<InfoTooltip termKey="commonStock" /></div>
-                <p class="text-slate-500">What founders and employees own. Paid last in an exit.</p>
-              </div>
-            </div>
-            <div class="flex gap-3 text-sm">
-              <div class="w-1 bg-sky-500 rounded"></div>
-              <div>
-                <div class="text-white mb-1">Preferred Stock<InfoTooltip termKey="preferredStock" /></div>
-                <p class="text-slate-500">What VCs buy. Comes with preferences, paid first.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Option Pools -->
-        <div class="mt-8">
-          <h3 class="text-sm font-medium text-slate-300 uppercase tracking-wide mb-4">
-            Option Pools<InfoTooltip termKey="optionPool" />
-          </h3>
-          <div class="grid md:grid-cols-2 gap-6">
-            <div class="space-y-4 text-sm text-slate-400">
-              <p>
-                <span class="text-white">What it is:</span> A reserve of shares set aside for future employee equity grants—stock options, RSUs, or other incentive compensation.
-              </p>
-              <p>
-                <span class="text-white">Why it exists:</span> Startups use equity to attract talent when they can't compete on salary. The pool lets you make grants without shareholder approval each time.
-              </p>
-              <p>
-                <span class="text-white">How dilution works:</span> When the pool is created, it dilutes existing shareholders. When options are granted from the pool, no additional dilution occurs—the shares were already reserved.
-              </p>
-            </div>
-            <div class="space-y-4 text-sm text-slate-400">
-              <p>
-                <span class="text-white">When to create:</span> Typically at incorporation (small pool) and expanded before each funding round. VCs often require a "top-up" to 10-20% as a condition of investment.
-              </p>
-              <p>
-                <span class="text-white">Pre vs Post-Money:</span><InfoTooltip termKey="optionPoolShuffle" /> Pre-money pools dilute only founders. Post-money pools dilute everyone equally. VCs prefer pre-money (the "option pool shuffle").
-              </p>
-              <p>
-                <span class="text-white">Typical sizes:</span> 10% at Seed, 15-20% at Series A, refreshed to maintain ~10-15% unallocated for future hires.
-              </p>
-            </div>
-          </div>
-          <div class="mt-4 p-3 bg-slate-800/50 rounded">
-            <h4 class="text-xs font-medium text-slate-300 uppercase tracking-wide mb-2">Rules of Thumb</h4>
-            <ul class="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-slate-400">
-              <li>• Size pool for 12-24 months of hiring</li>
-              <li>• First 10 employees: 0.5-2% each</li>
-              <li>• Employees 11-50: 0.1-0.5% each</li>
-              <li>• Negotiate pool size, not just valuation</li>
-              <li>• Unused pool reverts to founders on exit</li>
-              <li>• Vesting: 4 years with 1-year cliff is standard</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Exit Waterfall -->
-        <div class="mt-8">
-          <h3 class="text-sm font-medium text-slate-300 uppercase tracking-wide mb-4">
-            Exit Waterfall<InfoTooltip termKey="exitWaterfall" />
-          </h3>
-          <p class="text-sm text-slate-500 mb-4">When your company exits, money flows in this order:</p>
-          <div class="flex flex-wrap gap-2 text-sm">
-            <span class="px-3 py-1.5 bg-slate-800 text-slate-400 rounded">1. Debt holders</span>
-            <span class="text-slate-600">→</span>
-            <span class="px-3 py-1.5 bg-slate-800 text-slate-400 rounded">2. Liquidation preferences</span>
-            <span class="text-slate-600">→</span>
-            <span class="px-3 py-1.5 bg-slate-800 text-slate-400 rounded">3. Participating preferred</span>
-            <span class="text-slate-600">→</span>
-            <span class="px-3 py-1.5 bg-slate-800 text-slate-400 rounded">4. Common stockholders</span>
-          </div>
-        </div>
-
-        <!-- Watch Out For -->
-        <div class="mt-8 p-4 border border-amber-900/50 bg-amber-950/20 rounded">
-          <h3 class="text-sm font-medium text-amber-200 mb-3">Watch Out For</h3>
-          <ul class="space-y-2 text-sm text-slate-400">
-            <li>
-              <span class="text-amber-200">Option Pool Shuffle</span><InfoTooltip termKey="optionPoolShuffle" /> — VCs may ask for a 15-20% option pool from pre-money, meaning founders bear the dilution.
-            </li>
-            <li>
-              <span class="text-amber-200">Participating Preferred</span><InfoTooltip termKey="participatingPreferred" /> — Double-dip where investors get preference and share in remaining proceeds.
-            </li>
-            <li>
-              <span class="text-amber-200">Down Rounds</span><InfoTooltip termKey="downRound" /> — Trigger anti-dilution clauses that further dilute founders.
-            </li>
+        <div class="card-inset px-4 py-3 max-w-2xl mt-4">
+          <div class="label mb-2">Example</div>
+          <p>An investor paid $5M for 20% of the company, with a 1x non-participating preference.</p>
+          <ul class="mt-2 space-y-1">
+            <li><span class="num text-white">$20M</span> sale: 20% is $4M. The $5M preference is larger, so the investor takes $5M.</li>
+            <li><span class="num text-white">$50M</span> sale: 20% is $10M. That is larger, so the investor takes $10M.</li>
           </ul>
         </div>
+
+        <p class="mt-3 text-xs text-slate-400 max-w-2xl">
+          Read more:
+          <template v-for="(source, index) in sources.exit" :key="source.url + source.title">
+            <a :href="source.url" target="_blank" rel="noopener" class="text-slate-100 underline underline-offset-2 hover:no-underline">{{ source.title }}</a>
+            ({{ source.by }}){{ index < sources.exit.length - 1 ? ' · ' : '' }}
+          </template>
+        </p>
+
+        <p class="max-w-2xl mt-4">
+          <span class="text-white font-medium">An IPO is different.</span>
+          When a company sells shares to the public<InfoTooltip termKey="ipo" />, preferred stock turns into common stock.
+          There are no preferences. Each owner's shares are worth their percent of the company.
+        </p>
+
+        <p class="mt-3 text-xs text-slate-400 max-w-2xl">
+          Read more:
+          <template v-for="(source, index) in sources.ipo" :key="source.url + source.title">
+            <a :href="source.url" target="_blank" rel="noopener" class="text-slate-100 underline underline-offset-2 hover:no-underline">{{ source.title }}</a>
+            ({{ source.by }}){{ index < sources.ipo.length - 1 ? ' · ' : '' }}
+          </template>
+        </p>
       </div>
-    </Transition>
+
+      <!-- 6 -->
+      <div class="max-w-2xl">
+        <h3 class="font-serif text-lg text-white mb-2">6. Three things to watch for</h3>
+        <ul class="space-y-2">
+          <li><span class="text-white font-medium">A large option pool.</span> A larger pool lowers the founders' share in the same way as a lower valuation.</li>
+          <li><span class="text-white font-medium">Participating preferred or a preference above 1x.</span> In a small sale, they can leave very little for founders.</li>
+          <li>
+            <span class="text-white font-medium">A down round<InfoTooltip termKey="downRound" />.</span>
+            This is a round at a lower valuation than the last one. Earlier investors often have anti-dilution rights. These give them a larger share when their stock converts, and that dilutes founders more.
+          </li>
+        </ul>
+
+        <p class="mt-3 text-xs text-slate-400 max-w-2xl">
+          Read more:
+          <template v-for="(source, index) in sources.watch" :key="source.url + source.title">
+            <a :href="source.url" target="_blank" rel="noopener" class="text-slate-100 underline underline-offset-2 hover:no-underline">{{ source.title }}</a>
+            ({{ source.by }}){{ index < sources.watch.length - 1 ? ' · ' : '' }}
+          </template>
+        </p>
+      </div>
+    </div>
   </section>
 </template>

@@ -10,15 +10,15 @@ export interface RoundPreset {
   participating: boolean
 }
 
-// 2025 Silicon Valley tech startup funding round defaults
-// Based on typical ranges for successful tech startups
+// US venture round defaults, set to about the 2026 medians (Carta and PitchBook-NVCA data,
+// as reported by https://www.equidam.com/startup-valuation-by-stage/). Review them once a year.
 export const roundPresets: RoundPreset[] = [
   {
     id: 'pre-seed',
     name: 'Pre-Seed',
     displayName: 'Pre-Seed',
     description: 'First external capital, often from angels or accelerators',
-    preMoneyValuation: 3_000_000,
+    preMoneyValuation: 5_000_000,
     typicalInvestment: 500_000,
     optionPoolPercent: 10,
     liquidationPreference: 1,
@@ -29,8 +29,8 @@ export const roundPresets: RoundPreset[] = [
     name: 'Seed',
     displayName: 'Seed Round',
     description: 'Prove product-market fit, build initial team',
-    preMoneyValuation: 10_000_000,
-    typicalInvestment: 2_500_000,
+    preMoneyValuation: 18_000_000,
+    typicalInvestment: 3_500_000,
     optionPoolPercent: 10,
     liquidationPreference: 1,
     participating: false,
@@ -40,8 +40,8 @@ export const roundPresets: RoundPreset[] = [
     name: 'Series A',
     displayName: 'Series A',
     description: 'Scale product and go-to-market, institutional VCs lead',
-    preMoneyValuation: 40_000_000,
-    typicalInvestment: 12_000_000,
+    preMoneyValuation: 60_000_000,
+    typicalInvestment: 15_000_000,
     optionPoolPercent: 10,
     liquidationPreference: 1,
     participating: false,
@@ -51,8 +51,8 @@ export const roundPresets: RoundPreset[] = [
     name: 'Series B',
     displayName: 'Series B',
     description: 'Scale operations, expand market presence',
-    preMoneyValuation: 120_000_000,
-    typicalInvestment: 35_000_000,
+    preMoneyValuation: 150_000_000,
+    typicalInvestment: 40_000_000,
     optionPoolPercent: 5,
     liquidationPreference: 1,
     participating: false,
@@ -73,7 +73,7 @@ export const roundPresets: RoundPreset[] = [
     name: 'Series D',
     displayName: 'Series D+',
     description: 'Pre-IPO or continued expansion',
-    preMoneyValuation: 800_000_000,
+    preMoneyValuation: 550_000_000,
     typicalInvestment: 150_000_000,
     optionPoolPercent: 2,
     liquidationPreference: 1,

@@ -1,270 +1,276 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { FundingRound, Investor } from '@/types'
+import type { Conversion, FundingRound, Instrument, InstrumentKind, Investor, RoundSnapshot } from '@/types'
 import { formatCurrency, formatPercentage } from '@/utils/format'
 import { roundPresets } from '@/data/roundPresets'
 import InfoTooltip from './InfoTooltip.vue'
 import CurrencyInput from './CurrencyInput.vue'
-import InvestorCombobox from './InvestorCombobox.vue'
+import PercentInput from './PercentInput.vue'
+import InstrumentCard from './InstrumentCard.vue'
 
 const props = defineProps<{
   fundingRounds: FundingRound[]
+  instruments: Instrument[]
+  conversions: Record<number, Conversion>
+  snapshots: RoundSnapshot[] // cap table after each round; index 0 is "Initial"
+  removedRoundName: string | null
 }>()
-
-const previousInvestorNames = computed(() => {
-  const names = new Set<string>()
-  for (const round of props.fundingRounds) {
-    for (const investor of round.investors) {
-      if (investor.name && investor.name.trim()) {
-        names.add(investor.name.trim())
-      }
-    }
-  }
-  return Array.from(names).sort()
-})
 
 const emit = defineEmits<{
   addRound: [presetId?: string]
   removeRound: [id: number]
-  applyPreset: [roundId: number, presetId: string]
+  undoRemoveRound: []
   addInvestor: [round: FundingRound]
   removeInvestor: [round: FundingRound, investorId: number]
+  addInstrument: [kind: InstrumentKind]
+  removeInstrument: [id: number]
 }>()
 
-const expandedAdvanced = ref<Set<number>>(new Set())
+const investorNames = computed(() =>
+  [...new Set([
+    ...props.fundingRounds.flatMap(r => r.investors.map(i => i.name.trim())),
+    ...props.instruments.map(i => i.name.trim()),
+  ].filter(Boolean))].sort()
+)
 
-function toggleAdvanced(investorId: number) {
-  if (expandedAdvanced.value.has(investorId)) {
-    expandedAdvanced.value.delete(investorId)
-  } else {
-    expandedAdvanced.value.add(investorId)
-  }
+// SAFEs and notes are shown just before the round that converts them.
+const convertingIn = (roundId: number) => props.instruments.filter(i => i.kind !== 'loan' && i.convertsInRoundId === roundId)
+// No priced round yet (or its round was removed).
+const unconverted = computed(() =>
+  props.instruments.filter(i => i.kind !== 'loan' && !props.fundingRounds.some(r => r.id === i.convertsInRoundId))
+)
+const loans = computed(() => props.instruments.filter(i => i.kind === 'loan'))
+const convertedShare = (roundId: number) =>
+  convertingIn(roundId).reduce((sum, i) => sum + (props.conversions[i.id]?.percentage ?? 0), 0)
+
+const expandedTerms = ref<Set<number>>(new Set())
+
+function toggleTerms(investorId: number) {
+  if (!expandedTerms.value.delete(investorId)) expandedTerms.value.add(investorId)
 }
 
-function onPresetChange(round: FundingRound, event: Event) {
-  const presetId = (event.target as HTMLSelectElement).value
-  if (presetId) {
-    emit('applyPreset', round.id, presetId)
-  }
+const raised = (round: FundingRound) => round.investors.reduce((sum, i) => sum + (Number(i.amount) || 0), 0)
+const postMoney = (round: FundingRound) => (Number(round.preMoneyValuation) || 0) + raised(round)
+
+function investorPercentage(round: FundingRound, investor: Investor): number {
+  return postMoney(round) ? ((Number(investor.amount) || 0) / postMoney(round)) * 100 : 0
 }
 
-function getInvestorPercentage(round: FundingRound, investor: Investor): number {
-  const totalInvestment = round.investors.reduce((sum, i) => sum + i.amount, 0)
-  const postMoney = round.preMoneyValuation + totalInvestment
-  if (postMoney === 0) return 0
-  return (investor.amount / postMoney) * 100
+function foundersAfter(roundIndex: number): number {
+  const snapshot = props.snapshots[roundIndex + 1]
+  return snapshot ? snapshot.stakeholders.filter(s => s.type === 'founder').reduce((sum, s) => sum + s.percentage, 0) : 0
 }
+
 </script>
 
 <template>
-  <section class="mb-10">
-    <div class="flex items-baseline justify-between mb-4">
-      <h2 class="text-lg font-medium text-white">
-        Funding Rounds<InfoTooltip termKey="fundingRound" />
-      </h2>
+  <section class="section">
+    <h2 class="section-title mb-5">
+      <span class="step">2</span>Funding Rounds<InfoTooltip termKey="fundingRound" />
+    </h2>
+
+    <datalist id="investor-names">
+      <option v-for="name in investorNames" :key="name" :value="name" />
+    </datalist>
+
+    <div v-if="fundingRounds.length === 0 && instruments.length === 0" class="border border-slate-700 border-dashed rounded-lg p-8 text-center">
+      <p class="text-slate-300 mb-2">No funding yet</p>
+      <p class="text-sm text-slate-400">Add a SAFE, a note, or a priced round below to see how dilution changes ownership.</p>
     </div>
 
-    <div v-if="fundingRounds.length === 0" class="border border-slate-800 border-dashed rounded p-8 text-center">
-      <p class="text-slate-500 mb-2">No funding rounds yet</p>
-      <p class="text-sm text-slate-600">Add a round below to see how dilution affects equity</p>
-    </div>
-
-    <div class="space-y-4">
-      <div
-        v-for="round in fundingRounds"
-        :key="round.id"
-        class="border border-slate-800 rounded"
-      >
+    <div class="space-y-5">
+      <template v-for="(round, roundIndex) in fundingRounds" :key="round.id">
+      <InstrumentCard
+        v-for="instrument in convertingIn(round.id)"
+        :key="instrument.id"
+        :instrument="instrument"
+        :rounds="fundingRounds"
+        :conversion="conversions[instrument.id]"
+        @remove="emit('removeInstrument', instrument.id)"
+      />
+      <div class="card overflow-hidden">
         <!-- Round Header -->
-        <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <input
-              v-model="round.name"
-              type="text"
-              class="bg-slate-800/50 border border-slate-700/50 rounded px-2 py-1 text-white font-medium focus:outline-none focus:border-slate-600 hover:border-slate-600 w-28"
-            />
-            <select
-              @change="onPresetChange(round, $event)"
-              class="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-400 focus:outline-none"
-            >
-              <option value="">Apply preset</option>
-              <option v-for="preset in roundPresets" :key="preset.id" :value="preset.id">
-                {{ preset.displayName }}
-              </option>
-            </select>
-          </div>
+        <div class="card-x py-3 border-b border-slate-800 flex items-center justify-between gap-3">
+          <input
+            v-model="round.name"
+            type="text"
+            aria-label="Round name"
+            class="field flex-1 min-w-0 max-w-56 px-2 py-1 font-serif text-lg"
+          />
           <button
+            type="button"
             @click="emit('removeRound', round.id)"
-            class="text-slate-600 hover:text-red-400 transition-colors"
-            aria-label="Remove round"
+            class="icon-btn -mr-2"
+            :aria-label="`Remove ${round.name || 'round'}`"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
             </svg>
           </button>
         </div>
 
         <!-- Round Details -->
-        <div class="p-4">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-6">
+        <div class="card-pad">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 mb-6">
             <div>
-              <label class="block text-xs text-slate-500 uppercase tracking-wide mb-2">
-                Pre-Money Valuation<InfoTooltip termKey="preMoneyValuation" />
-              </label>
+              <div class="flex items-center mb-2">
+                <label :for="`pre-${round.id}`" class="label">Pre-money valuation</label>
+                <InfoTooltip termKey="preMoneyValuation" />
+              </div>
               <div class="flex items-center">
-                <span class="text-slate-500 mr-2">$</span>
+                <span class="text-slate-400 mr-2">$</span>
                 <CurrencyInput
+                  :id="`pre-${round.id}`"
                   v-model="round.preMoneyValuation"
-                  :min="0"
-                  :step="100000"
-                  class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white focus:outline-none focus:border-slate-600"
+                  class="field w-full px-3 py-2 num"
                 />
               </div>
+              <p class="text-xs text-slate-400 mt-1.5">You can type 10m or 500k.</p>
             </div>
             <div>
-              <label class="block text-xs text-slate-500 uppercase tracking-wide mb-2">
-                Option Pool<InfoTooltip termKey="optionPool" />
-              </label>
-              <div class="flex items-center">
-                <input
-                  v-model.number="round.optionPoolPercent"
-                  type="number"
-                  inputmode="decimal"
-                  min="0"
-                  max="30"
-                  step="1"
-                  class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white focus:outline-none focus:border-slate-600"
-                />
-                <span class="text-slate-500 ml-2">%</span>
+              <div class="flex items-center mb-2">
+                <label :for="`pool-${round.id}`" class="label">New option pool</label>
+                <InfoTooltip termKey="optionPoolShuffle" />
               </div>
-              <p class="text-xs text-slate-600 mt-1">Post-money</p>
+              <div class="flex items-center">
+                <PercentInput
+                  :id="`pool-${round.id}`"
+                  v-model="round.optionPoolPercent"
+                  :max="50"
+                  class="field w-full px-3 py-2 num"
+                />
+                <span class="text-slate-400 ml-2">%</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1.5">Added in this round, as % of the company after the round. Existing holders take the dilution.</p>
             </div>
           </div>
 
           <!-- Investors -->
           <div>
-            <label class="block text-xs text-slate-500 uppercase tracking-wide mb-3">
-              Investors<InfoTooltip termKey="investor" />
-            </label>
+            <div class="flex items-center mb-3">
+              <span class="label">Investors</span>
+              <InfoTooltip termKey="investor" />
+            </div>
             <div class="space-y-3">
               <div
                 v-for="investor in round.investors"
                 :key="investor.id"
-                class="bg-slate-900/50 border border-slate-800 rounded"
+                class="card-inset px-3 py-3 sm:px-4"
               >
-                <div class="p-3">
-                  <div class="flex items-center gap-3">
-                    <div class="w-1.5 h-1.5 bg-sky-500 rounded-full flex-shrink-0"></div>
-                    <InvestorCombobox
-                      v-model="investor.name"
-                      :suggestions="previousInvestorNames"
-                      placeholder="Investor name"
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <div class="w-2 h-2 bg-sky-500 rounded-full flex-shrink-0"></div>
+                  <input
+                    v-model="investor.name"
+                    type="text"
+                    list="investor-names"
+                    autocomplete="off"
+                    placeholder="Investor name"
+                    aria-label="Investor name"
+                    class="field flex-1 min-w-0 basis-32 h-8 px-2 text-base sm:text-sm"
+                  />
+                  <div class="flex items-center gap-2 ml-auto">
+                    <span class="text-slate-400">$</span>
+                    <CurrencyInput
+                      v-model="investor.amount"
+                      :aria-label="`${investor.name || 'Investor'} investment, dollars`"
+                      class="field w-28 h-8 px-2 text-right text-base sm:text-sm num"
                     />
-                    <div class="flex items-center gap-2">
-                      <span class="text-slate-500">$</span>
-                      <CurrencyInput
-                        v-model="investor.amount"
-                        :min="0"
-                        :step="10000"
-                        class="w-28 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white text-right text-sm focus:outline-none focus:border-slate-600"
-                      />
-                      <span class="text-xs text-sky-400 w-14 text-right">{{ formatPercentage(getInvestorPercentage(round, investor)) }}</span>
-                    </div>
+                    <span class="text-xs text-sky-400 w-14 text-right num" title="Share of the company bought in this round">
+                      {{ formatPercentage(investorPercentage(round, investor)) }}
+                    </span>
                     <button
+                      type="button"
                       @click="emit('removeInvestor', round, investor.id)"
-                      class="text-slate-600 hover:text-red-400 transition-colors"
+                      class="icon-btn -mr-2"
                       :disabled="round.investors.length <= 1"
-                      :class="{ 'opacity-30 cursor-not-allowed hover:text-slate-600': round.investors.length <= 1 }"
-                      aria-label="Remove investor"
+                      :title="round.investors.length <= 1 ? 'A round needs one investor' : undefined"
+                      :aria-label="`Remove ${investor.name || 'investor'}`"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                       </svg>
                     </button>
                   </div>
+                </div>
 
-                  <!-- Advanced Toggle -->
-                  <div class="mt-2 pt-2 border-t border-slate-800">
-                    <button
-                      @click="toggleAdvanced(investor.id)"
-                      class="text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1 transition-colors"
+                <!-- Terms -->
+                <div class="mt-3 pt-2 border-t border-slate-800">
+                  <button
+                    type="button"
+                    @click="toggleTerms(investor.id)"
+                    :aria-expanded="expandedTerms.has(investor.id)"
+                    class="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 py-1 transition-colors"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="h-3 w-3 transition-transform"
+                      :class="{ 'rotate-90': expandedTerms.has(investor.id) }"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      aria-hidden="true"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="h-3 w-3 transition-transform"
-                        :class="{ 'rotate-90': expandedAdvanced.has(investor.id) }"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                      </svg>
-                      Terms
-                      <span v-if="investor.liquidationPreference !== 1 || investor.participating" class="text-amber-500">(modified)</span>
-                    </button>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                    Terms:
+                    <span class="text-slate-300">
+                      {{ investor.liquidationPreference ? `${investor.liquidationPreference}x` : 'no' }} preference,
+                      {{ investor.participating ? 'participating' : 'non-participating' }}
+                    </span>
+                  </button>
 
-                    <Transition
-                      enter-active-class="transition ease-out duration-150"
-                      enter-from-class="opacity-0"
-                      enter-to-class="opacity-100"
-                      leave-active-class="transition ease-in duration-100"
-                      leave-from-class="opacity-100"
-                      leave-to-class="opacity-0"
-                    >
-                      <div v-if="expandedAdvanced.has(investor.id)" class="mt-3 space-y-4">
-                        <div>
-                          <label class="block text-xs text-slate-500 mb-2">
-                            Liquidation Preference<InfoTooltip termKey="liquidationPreference" />
-                          </label>
-                          <div class="flex gap-1">
-                            <button
-                              v-for="pref in [1, 1.5, 2, 3]"
-                              :key="pref"
-                              @click="investor.liquidationPreference = pref"
-                              class="px-3 py-1 rounded text-xs transition-colors"
-                              :class="investor.liquidationPreference === pref
-                                ? 'bg-slate-700 text-white'
-                                : 'bg-slate-800 text-slate-500 hover:text-slate-300'"
-                            >
-                              {{ pref }}x
-                            </button>
-                          </div>
-                        </div>
-
-                        <div>
-                          <label class="block text-xs text-slate-500 mb-2">
-                            Participation<InfoTooltip termKey="participatingPreferred" />
-                          </label>
-                          <div class="flex gap-1">
-                            <button
-                              @click="investor.participating = false"
-                              class="px-3 py-1 rounded text-xs transition-colors"
-                              :class="!investor.participating
-                                ? 'bg-slate-700 text-white'
-                                : 'bg-slate-800 text-slate-500 hover:text-slate-300'"
-                            >
-                              Non-participating
-                            </button>
-                            <button
-                              @click="investor.participating = true"
-                              class="px-3 py-1 rounded text-xs transition-colors"
-                              :class="investor.participating
-                                ? 'bg-amber-900/50 text-amber-200'
-                                : 'bg-slate-800 text-slate-500 hover:text-slate-300'"
-                            >
-                              Participating
-                            </button>
-                          </div>
-                        </div>
+                  <div v-if="expandedTerms.has(investor.id)" class="mt-3 space-y-4">
+                    <div role="group" :aria-labelledby="`pref-${investor.id}`">
+                      <div class="flex items-center mb-2">
+                        <span :id="`pref-${investor.id}`" class="text-xs text-slate-400">Liquidation preference</span>
+                        <InfoTooltip termKey="liquidationPreference" />
                       </div>
-                    </Transition>
+                      <div class="flex flex-wrap gap-1.5">
+                        <button
+                          v-for="pref in [0, 1, 1.5, 2, 3]"
+                          :key="pref"
+                          type="button"
+                          @click="investor.liquidationPreference = pref"
+                          :aria-pressed="investor.liquidationPreference === pref"
+                          class="chip"
+                        >
+                          {{ pref ? `${pref}x` : 'None' }}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div role="group" :aria-labelledby="`part-${investor.id}`">
+                      <div class="flex items-center mb-2">
+                        <span :id="`part-${investor.id}`" class="text-xs text-slate-400">Participation</span>
+                        <InfoTooltip termKey="participatingPreferred" />
+                      </div>
+                      <div class="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          @click="investor.participating = false"
+                          :aria-pressed="!investor.participating"
+                          class="chip"
+                        >
+                          Non-participating
+                        </button>
+                        <button
+                          type="button"
+                          @click="investor.participating = true"
+                          :aria-pressed="investor.participating"
+                          class="chip"
+                        >
+                          Participating
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
             <button
+              type="button"
               @click="emit('addInvestor', round)"
-              class="mt-2 text-xs text-slate-500 hover:text-white transition-colors"
+              class="btn-quiet mt-3 !text-xs"
             >
               + Add investor
             </button>
@@ -272,34 +278,56 @@ function getInvestorPercentage(round: FundingRound, investor: Investor): number 
         </div>
 
         <!-- Round Summary -->
-        <div class="px-4 py-3 border-t border-slate-800 bg-slate-900/30 text-sm text-slate-500 flex gap-6">
-          <span>
-            Investment: <span class="text-slate-300">{{ formatCurrency(round.investors.reduce((sum, i) => sum + i.amount, 0)) }}</span>
-          </span>
-          <span>
-            Post-money: <span class="text-slate-300">{{ formatCurrency(round.preMoneyValuation + round.investors.reduce((sum, i) => sum + i.amount, 0)) }}</span>
-          </span>
-          <span v-if="round.optionPoolPercent > 0">
-            Pool: <span class="text-amber-400">{{ round.optionPoolPercent }}%</span>
-          </span>
+        <div class="card-row border-t border-slate-800 bg-slate-950/40 text-sm text-slate-400 flex flex-wrap gap-x-6 gap-y-1">
+          <span>Raised: <span class="num text-slate-100">{{ formatCurrency(raised(round)) }}</span></span>
+          <span>Post-money: <span class="num text-slate-100">{{ formatCurrency(postMoney(round)) }}</span></span>
+          <span v-if="round.optionPoolPercent > 0">Pool added: <span class="num text-amber-400">+{{ round.optionPoolPercent }}%</span></span>
+          <span v-if="convertingIn(round.id).length">SAFEs and notes converted: <span class="num text-sky-400">{{ formatPercentage(convertedShare(round.id)) }}</span></span>
+          <span>Founders after: <span class="num text-emerald-400">{{ formatPercentage(foundersAfter(roundIndex)) }}</span></span>
         </div>
       </div>
+      </template>
+
+      <InstrumentCard
+        v-for="instrument in [...unconverted, ...loans]"
+        :key="instrument.id"
+        :instrument="instrument"
+        :rounds="fundingRounds"
+        :conversion="conversions[instrument.id]"
+        @remove="emit('removeInstrument', instrument.id)"
+      />
     </div>
 
-    <!-- Add Round Buttons -->
-    <div class="mt-6">
-      <p class="text-xs text-slate-500 uppercase tracking-wide mb-3">Add round</p>
+    <div
+      v-if="removedRoundName !== null"
+      class="card card-row mt-5 text-sm text-slate-300 flex items-center justify-between gap-3"
+      role="status"
+    >
+      <span>Removed {{ removedRoundName || 'round' }}.</span>
+      <button type="button" @click="emit('undoRemoveRound')" class="text-white underline underline-offset-2 hover:no-underline font-medium">Undo</button>
+    </div>
+
+    <!-- Add buttons -->
+    <div class="mt-8">
+      <p class="label mb-3">Add early or other funding</p>
+      <div class="flex flex-wrap gap-2 mb-6">
+        <button type="button" class="btn" title="Simple Agreement for Future Equity. Converts to stock in the next priced round." @click="emit('addInstrument', 'safe')">+ SAFE</button>
+        <button type="button" class="btn" title="A loan that converts to stock in the next priced round." @click="emit('addInstrument', 'note')">+ Convertible note</button>
+        <button type="button" class="btn" title="Debt that is repaid before stock in a sale. It gives no ownership." @click="emit('addInstrument', 'loan')">+ Loan</button>
+      </div>
+      <p class="label mb-3">Add priced round</p>
       <div class="flex flex-wrap gap-2">
         <button
-          v-for="preset in roundPresets.filter(p => p.id !== 'custom')"
+          v-for="preset in roundPresets"
           :key="preset.id"
+          type="button"
           @click="emit('addRound', preset.id)"
-          class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-slate-300 rounded text-sm transition-colors"
+          :title="preset.description"
+          class="btn"
         >
-          {{ preset.displayName }}
+          + {{ preset.id === 'custom' ? 'Custom' : preset.displayName }}
         </button>
       </div>
     </div>
-
   </section>
 </template>

@@ -13,7 +13,7 @@ export const glossary: Record<string, GlossaryTerm> = {
   },
   dilution: {
     term: 'Dilution',
-    definition: 'The reduction in existing shareholders\' ownership percentage when new shares are issued. Think of it like baking a larger pie—your slice percentage shrinks, but the pie (company value) is bigger, so your actual "food" (share value) should increase.',
+    definition: 'The drop in your ownership percentage when the company issues new shares. Your slice of the pie gets smaller, but the pie should be larger, so the slice can still be worth more.',
     category: 'general',
   },
   proRata: {
@@ -52,7 +52,7 @@ export const glossary: Record<string, GlossaryTerm> = {
   // Securities & Instruments
   commonStock: {
     term: 'Common Stock',
-    definition: 'The type of shares founders and employees typically own. It usually has fewer rights than preferred stock—in an exit, common stockholders get paid after preferred stockholders.',
+    definition: 'The type of shares founders and employees typically own. It usually has fewer rights than preferred stock. In a sale, common stockholders get paid after preferred stockholders.',
     category: 'securities',
   },
   preferredStock: {
@@ -62,59 +62,70 @@ export const glossary: Record<string, GlossaryTerm> = {
   },
   safe: {
     term: 'SAFE (Simple Agreement for Future Equity)',
-    definition: 'A popular early-stage investment instrument that isn\'t debt or equity yet—it\'s a "promise" to give equity later when a priced round happens. SAFEs convert to shares at a discount or valuation cap.',
+    definition: 'An investment that is not stock yet. The investor pays now and gets stock in the next priced round, at the better of a valuation cap or a discount. It has no interest and no due date. If the company is sold first, the investor takes the greater of the money back or the share at the cap. A post-money cap makes the share easy to see: $500K at a $5M cap is 10% before the round.',
     category: 'securities',
   },
   convertibleNote: {
     term: 'Convertible Note',
-    definition: 'Similar to a SAFE but structured as debt with an interest rate and maturity date. Converts to equity at the next priced round, typically with a discount or valuation cap to reward early risk.',
+    definition: 'A loan that turns into stock in the next priced round. The amount paid in plus interest converts, at the better of a valuation cap or a discount. Typical terms: 6% to 8% interest, a 20% discount, 18 to 24 months. If the company is sold first, the holder takes cash (often 1x to 2x the principal) or converts at the cap. As debt, it is paid before SAFEs and stock.',
     category: 'securities',
   },
   valuationCap: {
     term: 'Valuation Cap',
-    definition: 'The maximum valuation at which a SAFE or convertible note will convert to equity. Protects early investors—if the company raises at $50M but the cap is $10M, they convert at the $10M price.',
+    definition: 'The highest valuation at which a SAFE or note converts. If the round values the company above the cap, the holder converts as if the valuation were the cap, and gets more shares. A post-money cap counts all SAFEs and notes in the company. A pre-money cap does not, so those holders dilute each other.',
+    category: 'securities',
+  },
+
+  conversionDiscount: {
+    term: 'Conversion Discount',
+    definition: 'A lower price for a SAFE or note when it converts. With a 20% discount, the holder pays 80% of the price that the new investors pay, and gets 1.25 times the shares. If there is also a cap, the holder gets the better of the two, not both.',
+    category: 'securities',
+  },
+  loan: {
+    term: 'Loan (Venture Debt)',
+    definition: 'Money that the company must pay back with interest. It gives the lender no ownership. In a sale, loans are paid before all stock, so a loan lowers what every holder gets. This calculator uses simple interest and does not model warrants.',
     category: 'securities',
   },
 
   // Control & Rights
   liquidationPreference: {
     term: 'Liquidation Preference',
-    definition: 'Determines how exit proceeds are distributed. The multiplier (1x, 2x, etc.) times the investment amount is paid to investors BEFORE common stockholders receive anything. Example: A VC invests $5M with a 1x preference. In a $20M exit, they first get their $5M back, then remaining $15M is split. With a 2x preference, they\'d get $10M first. If the exit is less than total preferences, investors split it pro-rata and founders get nothing.',
+    definition: 'In a sale, the money investors get back before common stock gets anything. It is the multiple (1x, 2x) times the amount invested. Example: a VC invests $5M at 1x. In a $20M sale they can take $5M first. At 2x it is $10M. If the sale price is below the total of all preferences, investors split it and common gets nothing. In an IPO, preferred stock converts to common and the preference does not apply.',
     category: 'control',
   },
   participatingPreferred: {
     term: 'Participating Preferred',
-    definition: 'When checked, investors "double-dip": they get their liquidation preference PLUS their pro-rata share of remaining proceeds. Example: VC owns 20% and invested $2M with 1x participating. In a $10M exit: they get $2M preference + 20% of remaining $8M ($1.6M) = $3.6M total. Without participation (non-participating), they\'d choose the better of $2M preference OR 20% of $10M ($2M). Participating preferred is more investor-friendly and reduces founder payouts.',
+    definition: 'When on, the investor takes the liquidation preference and also a share of what is left. Example: a VC owns 20% and invested $2M at 1x participating. In a $10M sale they get $2M, plus 20% of the remaining $8M ($1.6M), for $3.6M. Non-participating investors must choose one or the other. Participating is better for the investor and rare: about 2% to 5% of deals.',
     category: 'control',
   },
   nonParticipating: {
     term: 'Non-Participating Preferred',
-    definition: 'The investor-friendlier alternative to participating. Investors choose the BETTER of: (1) their liquidation preference, OR (2) converting to common stock and taking their pro-rata share. They cannot do both. Example: VC owns 20%, invested $1M with 1x non-participating. In a $10M exit: Option 1 is $1M (preference), Option 2 is $2M (20% of $10M). They\'d convert and take $2M. In a $4M exit: Option 1 is $1M, Option 2 is $800K—they\'d take the $1M preference.',
+    definition: 'The standard structure, and the better one for founders. The investor takes the greater of (1) the liquidation preference or (2) the share they would get as common stock. Not both. Example: a VC owns 20% and invested $1M at 1x. In a $10M sale, the share is $2M, so they convert and take $2M. In a $4M sale, the share is $800K, so they take the $1M preference.',
     category: 'control',
   },
   optionPool: {
     term: 'Option Pool',
-    definition: 'Shares reserved (typically 10-20%) for future employee stock options. Best created pre-money before major funding to attract talent without diluting new investors. A pre-money pool signals long-term planning and speeds up investment. Allows offering equity instead of higher salaries when cash is tight.',
+    definition: 'Shares reserved for future employee grants. To create or grow the pool dilutes the existing holders. Investors usually ask for it to be counted before their money comes in, so the founders carry the dilution.',
     category: 'control',
   },
   optionPoolShuffle: {
     term: 'Option Pool Shuffle',
-    definition: 'A negotiation tactic where VCs insist you create an employee option pool before they invest, calculated from pre-money valuation. This effectively makes founders bear 100% of the dilution for future hires, rather than sharing it with investors.',
+    definition: 'When investors ask for the option pool to be counted in the pre-money valuation. The new pool then dilutes only the existing holders, not the new investor. It lowers your real pre-money valuation. This calculator uses this method for each round.',
     category: 'control',
   },
   preMoneyOptionPool: {
     term: 'Pre-Money Option Pool',
-    definition: 'Option pool created before investment, carved from founder shares. Doesn\'t dilute incoming investors, making the deal cleaner. Ideal timing: before Seed/Series A, at incorporation, or before key hires.',
+    definition: 'A pool that exists before any investment. It is part of the first split of the company, with the founders. Later rounds dilute it in the same way as the founders.',
     category: 'control',
   },
   postMoneyOptionPool: {
     term: 'Post-Money Option Pool',
-    definition: 'Option pool created after investment, where the pool size (e.g., 10-20%) comes out of post-funding valuation. This dilutes everyone equally, including new investors—less favorable for founders.',
+    definition: 'A pool created after the investment. All holders, the new investor too, share the dilution. This is better for founders, and investors rarely agree to it.',
     category: 'control',
   },
   vesting: {
     term: 'Vesting',
-    definition: 'The process of earning equity over time. Standard is 4-year vesting with a 1-year cliff. Founder shares are often "re-vested" after investment—if you quit in Year 1, you lose most of your equity.',
+    definition: 'The process of earning equity over time. The standard is 4 years with a 1-year cliff. Investors often ask founders to vest again after a round: if you leave in year 1, you lose most of your equity.',
     category: 'control',
   },
   boardSeat: {
@@ -131,12 +142,12 @@ export const glossary: Record<string, GlossaryTerm> = {
   },
   seedRound: {
     term: 'Seed Round',
-    definition: 'The first significant external funding, typically $500K-$3M. Used to prove product-market fit. Often raised from angels, seed funds, or accelerators.',
+    definition: 'The first significant priced round, now typically $2M to $5M. Used to prove product-market fit. Often raised from angels and seed funds.',
     category: 'fundraising',
   },
   seriesA: {
     term: 'Series A',
-    definition: 'The first major VC round, typically $5M-$15M. Usually requires proven traction (revenue, users, growth). VCs take preferred stock with full rights and often a board seat.',
+    definition: 'The first major VC round, now typically $10M to $20M. Usually needs proven traction (revenue, users, growth). VCs take preferred stock and often a board seat.',
     category: 'fundraising',
   },
   termSheet: {
@@ -151,7 +162,7 @@ export const glossary: Record<string, GlossaryTerm> = {
   },
   dueDiligence: {
     term: 'Due Diligence',
-    definition: 'The "background check" phase where VCs verify your claims—examining contracts, IP ownership, financials, legal matters, and customer references before finalizing investment.',
+    definition: 'The check that VCs do before they invest. They examine contracts, IP ownership, financials, legal matters, and customer references.',
     category: 'fundraising',
   },
   proForma: {
@@ -168,17 +179,17 @@ export const glossary: Record<string, GlossaryTerm> = {
   },
   ipo: {
     term: 'IPO (Initial Public Offering)',
-    definition: 'The process of offering shares to the public on a stock exchange. Provides liquidity for all shareholders but requires significant revenue, compliance, and ongoing public reporting.',
+    definition: 'The first sale of shares to the public on a stock exchange. Preferred stock converts to common, so all holders are paid by ownership. Insiders usually cannot sell for a lockup period.',
     category: 'general',
   },
   acquisition: {
     term: 'Acquisition',
-    definition: 'When another company purchases your startup. The buyer pays cash, stock, or both. Proceeds are distributed according to the "exit waterfall"—preferences first, then common stockholders.',
+    definition: 'When another company buys your startup. The buyer pays cash, stock, or both. Proceeds follow the exit waterfall: preferences first, then common stockholders.',
     category: 'general',
   },
   exitWaterfall: {
     term: 'Exit Waterfall',
-    definition: 'The order in which exit proceeds are distributed: 1) Debt holders, 2) Preferred stockholders (liquidation preferences), 3) Participating preferred (if applicable), 4) Common stockholders. The math matters enormously.',
+    definition: 'The order in which sale proceeds are paid: 1) debt and deal costs, 2) liquidation preferences of preferred stock, 3) what is left is split between common stock and participating preferred by ownership. Non-participating preferred joins step 3 only if it gives up its preference.',
     category: 'general',
   },
   founder: {
@@ -195,7 +206,7 @@ export const glossary: Record<string, GlossaryTerm> = {
   // Exit-specific terms
   escrow: {
     term: 'Escrow / Holdback',
-    definition: 'A portion of the acquisition price (typically 10-20%) held in reserve for 12-24 months to cover potential claims, breaches of representations, or indemnification obligations. Released to sellers if no claims are made.',
+    definition: 'A part of the sale price, often about 10%, held back for 12 to 18 months to cover claims against the sellers. It is paid to the sellers later if there are no claims. This calculator leaves it out of the payouts at closing.',
     category: 'general',
   },
   managementCarveout: {
@@ -215,7 +226,7 @@ export const glossary: Record<string, GlossaryTerm> = {
   },
   underwriterFees: {
     term: 'Underwriter Fees',
-    definition: 'Commission paid to investment banks for managing an IPO, typically 5-7% of gross proceeds. Covers due diligence, regulatory filings, pricing, and distributing shares to institutional investors.',
+    definition: 'The commission paid to the investment banks that run the IPO. It is about 7% of the money raised for most IPOs, and less for very large ones. It is a percent of the money raised, not of the company value.',
     category: 'general',
   },
   lockupPeriod: {

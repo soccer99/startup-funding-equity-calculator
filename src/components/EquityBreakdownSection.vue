@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { EquityBreakdown, Stakeholder } from '@/types'
+import type { EquityBreakdown, RoundSnapshot, Stakeholder } from '@/types'
 import { formatPercentage } from '@/utils/format'
 import InfoTooltip from './InfoTooltip.vue'
 
@@ -9,162 +9,129 @@ const props = defineProps<{
 }>()
 
 type SortMode = 'percentage' | 'type'
-const sortMode = ref<SortMode>('percentage')
+const sortMode = ref<SortMode>('type')
 
-function getRoundOrder(roundName: string | undefined): number {
-  if (!roundName) return 999
-  const rounds = roundName.split(', ')
-  const firstRound = rounds[0]
-  const index = props.breakdown.rounds.findIndex(r => r.name === firstRound)
-  return index === -1 ? 999 : index
-}
+const typeOrder = { founder: 0, option_pool: 1, investor: 2 }
+const typeLabel = { founder: 'Founder', option_pool: 'Option pool', investor: 'Investor' }
+const typeColor = { founder: 'bg-emerald-500', option_pool: 'bg-amber-500', investor: 'bg-sky-500' }
 
-const sortedStakeholders = computed<Stakeholder[]>(() => {
-  const stakeholders = [...props.breakdown.stakeholders]
+// In "By type" order the investors stay in the order they joined, which is the order in the list.
+const sortedStakeholders = computed<Stakeholder[]>(() =>
+  [...props.breakdown.stakeholders].sort((a, b) =>
+    sortMode.value === 'percentage'
+      ? b.percentage - a.percentage
+      : typeOrder[a.type] - typeOrder[b.type]
+  )
+)
 
-  if (sortMode.value === 'percentage') {
-    return stakeholders.sort((a, b) => b.percentage - a.percentage)
-  } else {
-    return stakeholders.sort((a, b) => {
-      const typeOrder = { founder: 0, option_pool: 1, investor: 2 }
-      const aTypeOrder = typeOrder[a.type] ?? 3
-      const bTypeOrder = typeOrder[b.type] ?? 3
-
-      if (aTypeOrder !== bTypeOrder) {
-        return aTypeOrder - bTypeOrder
-      }
-
-      if (a.type === 'founder' && b.type === 'founder') {
-        return b.percentage - a.percentage
-      }
-
-      if (a.type === 'investor' && b.type === 'investor') {
-        const aRoundOrder = getRoundOrder(a.roundName)
-        const bRoundOrder = getRoundOrder(b.roundName)
-        if (aRoundOrder !== bRoundOrder) {
-          return aRoundOrder - bRoundOrder
-        }
-        return b.percentage - a.percentage
-      }
-
-      return 0
-    })
-  }
-})
-
-function getTypeColor(type: string): string {
-  switch (type) {
-    case 'founder': return 'bg-emerald-500'
-    case 'investor': return 'bg-sky-500'
-    case 'option_pool': return 'bg-amber-500'
-    default: return 'bg-slate-500'
-  }
-}
+const percentIn = (round: RoundSnapshot, key: string) => round.stakeholders.find(s => s.key === key)?.percentage || 0
+const isLast = (index: number) => index === props.breakdown.rounds.length - 1
 </script>
 
 <template>
-  <section class="mb-10">
-    <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3 mb-4">
-      <h2 class="text-lg font-medium text-white">
-        Cap Table<InfoTooltip termKey="capTable" />
+  <section class="section">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+      <h2 class="section-title">
+        <span class="step">3</span>Cap Table<InfoTooltip termKey="capTable" />
       </h2>
-      <div class="flex items-center gap-4 flex-wrap">
-        <div class="hidden sm:flex gap-4 text-xs text-slate-500">
-          <span class="flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-            Founders
-          </span>
-          <span class="flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 bg-sky-500 rounded-full"></span>
-            Investors
-          </span>
-          <span class="flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
-            Pool
-          </span>
-        </div>
-        <div class="flex text-xs border border-slate-700 rounded overflow-hidden">
-          <button
-            @click="sortMode = 'percentage'"
-            class="px-2 py-1 transition-colors"
-            :class="sortMode === 'percentage' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'"
-          >
-            By %
-          </button>
-          <button
-            @click="sortMode = 'type'"
-            class="px-2 py-1 transition-colors"
-            :class="sortMode === 'type' ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'"
-          >
-            By type
-          </button>
-        </div>
+      <div class="flex text-xs border border-slate-700 rounded-md overflow-hidden" role="group" aria-label="Sort order">
+        <button
+          v-for="mode in (['type', 'percentage'] as const)"
+          :key="mode"
+          type="button"
+          @click="sortMode = mode"
+          :aria-pressed="sortMode === mode"
+          class="px-2.5 py-1 transition-colors"
+          :class="sortMode === mode ? 'bg-slate-200 text-slate-950 font-medium' : 'text-slate-400 hover:text-slate-100'"
+        >
+          {{ mode === 'type' ? 'By type' : 'By %' }}
+        </button>
       </div>
     </div>
 
-    <div class="mb-4 px-3 py-2 bg-amber-950/30 border border-amber-900/50 rounded text-xs text-amber-200/80">
-      <strong>Estimate only.</strong> This calculator provides simplified projections for educational purposes. Results may contain errors. Not legal or investment advice. Actual cap tables involve additional terms. Consult professionals for real transactions.
-    </div>
+    <div class="card overflow-hidden">
+      <!-- Ownership now: the picture first, the numbers below it -->
+      <div class="card-pad border-b border-slate-800">
+        <div class="flex items-baseline justify-between gap-3 mb-3">
+          <span class="label">Ownership now</span>
+          <div class="flex flex-wrap justify-end gap-x-4 gap-y-1 text-xs text-slate-400">
+            <span v-for="(label, type) in typeLabel" :key="type" class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full" :class="typeColor[type]"></span>{{ label }}s
+            </span>
+          </div>
+        </div>
+        <div class="flex h-3 w-full gap-px overflow-hidden rounded-full bg-slate-800" role="img" aria-label="Current ownership split">
+          <div
+            v-for="s in sortedStakeholders"
+            :key="s.key"
+            :class="typeColor[s.type]"
+            :style="{ width: s.percentage + '%' }"
+            :title="`${s.name}: ${formatPercentage(s.percentage)}`"
+          ></div>
+        </div>
+      </div>
 
-    <div class="border border-slate-800 rounded overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="bg-slate-900/50">
-            <th class="text-left py-2 px-4 text-xs text-slate-500 uppercase tracking-wide font-medium">
-              Stakeholder
-            </th>
-            <th
-              v-for="round in breakdown.rounds"
-              :key="round.name"
-              class="text-right py-2 px-4 text-xs text-slate-500 uppercase tracking-wide font-medium min-w-[80px]"
-            >
-              {{ round.name }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="stakeholder in sortedStakeholders"
-            :key="stakeholder.name"
-            class="border-t border-slate-800"
-          >
-            <td class="py-2.5 px-4">
-              <span class="flex items-center gap-2">
-                <span class="w-1.5 h-1.5 rounded-full" :class="getTypeColor(stakeholder.type)"></span>
-                <span class="text-slate-200">{{ stakeholder.name }}</span>
-                <span v-if="stakeholder.roundName" class="text-xs text-slate-600">
-                  {{ stakeholder.roundName }}
-                </span>
-              </span>
-            </td>
-            <td
-              v-for="round in breakdown.rounds"
-              :key="round.name"
-              class="text-right py-2.5 px-4 font-mono"
-            >
-              <span
-                :class="round.stakeholders.find(s => s.name === stakeholder.name)?.percentage
-                  ? 'text-slate-200'
-                  : 'text-slate-700'"
+      <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Cap table by round">
+        <table class="w-full text-sm">
+          <thead>
+            <tr>
+              <th scope="col" class="sticky left-0 bg-slate-900 text-left py-2.5 card-x label">Stakeholder</th>
+              <th
+                v-for="(round, index) in breakdown.rounds"
+                :key="index"
+                scope="col"
+                class="text-right py-2.5 card-x label min-w-[88px] whitespace-nowrap"
+                :class="{ '!text-white': isLast(index) }"
               >
-                {{ formatPercentage(round.stakeholders.find(s => s.name === stakeholder.name)?.percentage || 0) }}
-              </span>
-            </td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr class="border-t-2 border-slate-700 bg-slate-900/30">
-            <td class="py-2.5 px-4 text-slate-400 font-medium">Total</td>
-            <td
-              v-for="round in breakdown.rounds"
-              :key="round.name"
-              class="text-right py-2.5 px-4 font-mono text-slate-200"
+                {{ round.name || `Round ${index}` }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="stakeholder in sortedStakeholders"
+              :key="stakeholder.key"
+              class="group border-t border-slate-800 hover:bg-slate-800/40"
             >
-              {{ formatPercentage(round.stakeholders.reduce((sum, s) => sum + s.percentage, 0)) }}
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+              <th scope="row" class="sticky left-0 bg-slate-900 group-hover:bg-slate-800 py-3 card-x text-left font-normal">
+                <span class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full flex-shrink-0" :class="typeColor[stakeholder.type]"></span>
+                  <span class="sr-only">{{ typeLabel[stakeholder.type] }}:</span>
+                  <span class="text-slate-100 whitespace-nowrap">{{ stakeholder.name || 'Unnamed' }}</span>
+                  <span v-if="stakeholder.roundName" class="hidden sm:inline text-xs text-slate-400 whitespace-nowrap">
+                    {{ stakeholder.roundName }}
+                  </span>
+                </span>
+              </th>
+              <td
+                v-for="(round, index) in breakdown.rounds"
+                :key="index"
+                class="text-right py-3 card-x num"
+                :class="isLast(index) ? 'text-white font-semibold' : 'text-slate-400'"
+              >
+                {{ percentIn(round, stakeholder.key) ? formatPercentage(percentIn(round, stakeholder.key)) : '—' }}
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="border-t-2 border-slate-700">
+              <th scope="row" class="sticky left-0 bg-slate-900 py-3 card-x text-left text-slate-300 font-medium">Total</th>
+              <td
+                v-for="(round, index) in breakdown.rounds"
+                :key="index"
+                class="text-right py-3 card-x num"
+                :class="isLast(index) ? 'text-white font-semibold' : 'text-slate-400'"
+              >
+                {{ formatPercentage(round.stakeholders.reduce((sum, s) => sum + s.percentage, 0)) }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     </div>
+    <p v-if="breakdown.outstanding?.length" class="mt-4 text-xs text-slate-400">
+      "If converted" counts SAFEs and notes that have no priced round yet as stock, at their valuation cap.
+      One with no cap shows no share until there is a price.
+    </p>
   </section>
 </template>
